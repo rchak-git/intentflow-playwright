@@ -1,0 +1,18 @@
+testName: Moodle Portal End-to-End Login Flow
+description: Real-world user journey starting from portal home, clicking login, and authenticating.
+steps:
+  - fieldKey: loginLink
+    intent: action
+    actionType: CLICK
+  - fieldKey: usernameInput
+    intent: populate
+    value: student
+  - fieldKey: passwordInput
+    intent: populate
+    value: sandbox24
+  - fieldKey: loginButton
+    intent: action
+    actionType: CLICK
+  - fieldKey: userMenu
+    intent: verify
+    assertion: VISIBLE

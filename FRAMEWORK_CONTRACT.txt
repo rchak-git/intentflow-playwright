@@ -1,0 +1,5 @@
+INTENTFLOW FRAMEWORK ARCHITECTURAL CONTRACT:
+1. UI Map Uniformity: Every entry in a UI map must be a Record<string, string>. The primary/root selector must ALWAYS be named 'main'. Optional fallback locators use 'alternate'. Complex widgets define sub-elements using descriptive keys (e.g., sourceSelect, addButton).
+2. Polymorphic Control Architecture: All controls extend 'BaseControl'. The CommandDispatcher acts strictly as a router/orchestrator—it resolves the locator config and delegates execution to the appropriate control class based on widgetType.
+3. Zod Schema Validation: All YAML steps must conform to the intentSchema.ts validation rules, including optional sub-actions (e.g., ADD, REMOVE) and dynamic values.
+4. Resilience: BaseControl provides built-in action retry wrappers (default 2 retries) and locator retrieval methods (getPrimaryLocator, getAlternateLocator, getSubLocator).
