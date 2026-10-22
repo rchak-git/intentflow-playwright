@@ -11,14 +11,20 @@ export function resolveLocator(page: Page, def: LocatorDefinition): Locator {
         case 'role':
             return page.getByRole(def.role, {
                 name: def.name,
-                exact: def.exact, // <-- Forward exact flag to Playwright
+                exact: def.exact,
             });
         case 'label':
-            return page.getByLabel(def.text);
+            return page.getByLabel(def.text, {
+                exact: def.exact, // <-- Forward exact flag to Playwright
+            });
         case 'text':
-            return page.getByText(def.text);
+            return page.getByText(def.text, {
+                exact: def.exact, // <-- Forward exact flag to Playwright
+            });
         case 'placeholder':
-            return page.getByPlaceholder(def.text);
+            return page.getByPlaceholder(def.text, {
+                exact: def.exact, // <-- Forward exact flag to Playwright
+            });
         case 'css':
             return page.locator(def.selector);
         default:

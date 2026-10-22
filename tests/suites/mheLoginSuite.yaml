@@ -1,0 +1,95 @@
+page: MheLoginPage
+description: "McGraw Hill AUT Login scenarios and data profiles"
+uiMap: "src/registries/mheLoginUiMap.ts"
+
+sharedScenarios:
+  studentLoginFlow:
+    description: "Submit credentials and attempt authentication"
+    steps:
+      - step: "User enters username"
+        fieldKey: usernameInput
+        intent: populate
+        value: "${data:usernameInput}"
+        storeAs: capturedUsername # <--- Step 1: Captures entered username into globalContextStore
+
+      - step: "User enters password"
+        fieldKey: passwordInput
+        intent: populate
+        value: "${data:passwordInput}"
+
+      - step: "User clicks login button"
+        fieldKey: loginSubmitBtn
+        intent: click
+
+  studentLoginAndVerifyDisappear:
+    description: "Submit credentials and verify form unmounts"
+    refScenario: studentLoginFlow
+    additionalSteps:
+      - step: "Verify Login Form Unmounts"
+        fieldKey: loginFormRegion
+        intent: verify
+        assertion: NOT_VISIBLE
+
+  invalidLoginErrorFlow:
+    description: "Submit invalid credentials and verify error banner"
+    refScenario: studentLoginFlow
+    additionalSteps:
+      - step: "Verify error banner message is displayed"
+        fieldKey: errorMessageBanner
+        intent: verify
+        assertion: VISIBLE
+
+      # Step 2: Uses the captured username token in a step verification
+      - step: "Verify username input still holds captured context value"
+        fieldKey: usernameInput
+        intent: verify
+        assertion: TEXT_EQUALS
+        value: "${context:capturedUsername}"
+
+  missingPasswordErrorFlow:
+    description: "Submit form with username only and verify submit button remains disabled"
+    steps:
+      - step: "User enters username"
+        fieldKey: usernameInput
+        intent: populate
+        value: "${data:usernameInput}"
+
+      - step: "Verify login button remains disabled without password"
+        fieldKey: loginSubmitBtn
+        intent: verify
+        assertion: DISABLED
+
+  verifyFormState:
+    description: "Verify login form controls are visible"
+    steps:
+      - step: "Verify login container is visible"
+        fieldKey: loginFormRegion
+        intent: verify
+        assertion: VISIBLE
+
+      - step: "Verify forgot password link is available"
+        fieldKey: forgotPasswordLink
+        intent: verify
+        assertion: VISIBLE
+
+profiles:
+  validStudentLogin:
+    usesScenario: studentLoginFlow
+    data:
+      usernameInput: "admin_one"
+      passwordInput: "P@ssw0rd"
+
+  invalidStudentLogin:
+    usesScenario: invalidLoginErrorFlow
+    data:
+      usernameInput: "student_qaXYZ"
+      passwordInput: "SecurePass2026!"
+
+  missingPasswordLogin:
+    usesScenario: missingPasswordErrorFlow
+    data:
+       usernameInput: "student_qa"
+
+  loginFormInitialCheck:
+    usesScenario: verifyFormState
+    data: {}

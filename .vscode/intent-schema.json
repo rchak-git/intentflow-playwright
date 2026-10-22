@@ -1,0 +1,209 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "IntentFlow Suite Specification Schema",
+  "type": "object",
+  "required": [
+    "page"
+  ],
+  "properties": {
+    "page": {
+      "type": "string",
+      "description": "Target page module name (e.g., loginPage, rosterPage)"
+    },
+    "description": {
+      "type": "string",
+      "description": "Optional suite summary or test goal"
+    },
+    "uiMap": {
+      "description": "UI Map reference path or mapping object",
+      "oneOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": {
+            "type": "string"
+          }
+        }
+      ]
+    },
+    "sharedScenarios": {
+      "type": "object",
+      "description": "Reusable step scenarios keyed by scenario name",
+      "additionalProperties": {
+        "type": "object",
+        "properties": {
+          "testName": {
+            "type": "string"
+          },
+          "description": {
+            "type": "string"
+          },
+          "refScenario": {
+            "type": "string"
+          },
+          "steps": {
+            "type": "array",
+            "items": {
+              "$ref": "#/definitions/StepIntent"
+            }
+          },
+          "additionalSteps": {
+            "type": "array",
+            "items": {
+              "$ref": "#/definitions/StepIntent"
+            }
+          }
+        }
+      }
+    },
+    "profiles": {
+      "type": "object",
+      "description": "Dynamic data execution profiles",
+      "additionalProperties": {
+        "type": "object",
+        "properties": {
+          "usesScenario": {
+            "type": "string"
+          },
+          "scenarioFile": {
+            "type": "string"
+          },
+          "verifications": {
+            "type": "array",
+            "items": {
+              "$ref": "#/definitions/StepIntent"
+            }
+          },
+          "data": {
+            "type": "object"
+          }
+        }
+      }
+    }
+  },
+  "definitions": {
+    "StepIntent": {
+      "type": "object",
+      "properties": {
+        "step": {
+          "type": "string",
+          "description": "Step description or label"
+        },
+        "fieldKey": {
+          "type": "string",
+          "description": "Target element identifier in UI map"
+        },
+        "intent": {
+          "type": "string",
+          "enum": [
+            "populate",
+            "click",
+            "action",
+            "verify",
+            "include",
+            "custom"
+          ],
+          "description": "Core action category"
+        },
+        "actionType": {
+          "type": "string",
+          "enum": [
+            "POPULATE",
+            "CLICK",
+            "SELECT",
+            "CHECK",
+            "HOVER",
+            "CUSTOM_SCRIPT",
+            "CUSTOM_HANDLER"
+          ],
+          "description": "Action execution type"
+        },
+        "widgetType": {
+          "type": "string",
+          "enum": [
+            "TEXTBOX",
+            "BUTTON",
+            "CHECKBOX",
+            "DROPDOWN",
+            "LABEL",
+            "LINK",
+            "CONTAINER",
+            "REGION",
+            "DUAL_LISTBOX",
+            "WEB_TABLE",
+            "SEARCH",
+            "COURSE_CARD",
+            "GENERIC"
+          ],
+          "description": "UI control widget classification"
+        },
+        "subAction": {
+          "type": "string",
+          "description": "Widget-specific sub-action"
+        },
+        "value": {
+          "oneOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            }
+          ],
+          "description": "Input value or expected assertion value"
+        },
+        "params": {
+          "type": "object",
+          "description": "Additional action parameters"
+        },
+        "handlerName": {
+          "type": "string",
+          "description": "Custom handler function key"
+        },
+        "script": {
+          "type": "string",
+          "description": "Inline evaluation script"
+        },
+        "assertion": {
+          "type": "string",
+          "enum": [
+            "VISIBLE",
+            "NOT_VISIBLE",
+            "TEXT_EQUALS",
+            "CONTAIN_TEXT",
+            "ENABLED",
+            "DISABLED"
+          ],
+          "description": "Verification state check"
+        },
+        "storeAs": {
+          "type": "string",
+          "description": "Dynamic context variable name to save value"
+        },
+        "scenario": {
+          "type": "string",
+          "description": "Target shared scenario key for include steps"
+        },
+        "dataId": {
+          "type": "string",
+          "description": "Data profile record key"
+        }
+      },
+      "additionalProperties": false
+    }
+  }
+}

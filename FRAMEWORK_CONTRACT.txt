@@ -3,3 +3,33 @@ INTENTFLOW FRAMEWORK ARCHITECTURAL CONTRACT:
 2. Polymorphic Control Architecture: All controls extend 'BaseControl'. The CommandDispatcher acts strictly as a router/orchestrator—it resolves the locator config and delegates execution to the appropriate control class based on widgetType.
 3. Zod Schema Validation: All YAML steps must conform to the intentSchema.ts validation rules, including optional sub-actions (e.g., ADD, REMOVE) and dynamic values.
 4. Resilience: BaseControl provides built-in action retry wrappers (default 2 retries) and locator retrieval methods (getPrimaryLocator, getAlternateLocator, getSubLocator).
+
+Prioritized Backlog Roadmap
+Here is the proposed, step-by-step roadmap for scaling IntentFlow to meet enterprise requirements:
+
+Item 1: Dual ListBox Control Implementation
+Goal: Create DualListBoxControl extending BaseControl.
+
+Details: Support sub-actions (ADD, REMOVE, REMOVE_ALL) handling single or array values (string | string[]). Leverage named sub-locators (sourceList, targetList, addButton, removeButton) from UiMapEntry.
+
+Item 2: Web Table / Grid Control Implementation
+Goal: Create WebTableControl extending BaseControl.
+
+Details: Support dynamic row/column matching (e.g., locate row where column "Course Name" equals "TypeScript Automation") and cell-level verifications or actions.
+
+Item 3: Assertion Layer Standardization & Refinement
+Goal: Refine verify intents across controls.
+
+Details: Differentiate between DOM text (toHaveText) and form input values (toHaveValue). Add standard assertion types (TEXT_CONTAINS, VALUE_EQUALS, IS_ENABLED, IS_DISABLED).
+
+Item 4: Runtime Context Store & Token Interpolation Engine
+Goal: Enable dynamic data passing across execution steps.
+
+Details: Introduce a runtime key-value context store (ContextStore). Enable variable generation (e.g., ${TIMESTAMP}) and value capture/interpolation (e.g., ${LK_UP[createdUserId]}) inside scenario steps.
+
+Item 5: Custom Function Escape Hatch (F Flags & Handlers)
+Goal: Execute non-standard custom JS/TS backend or UI logic.
+
+Details: Implement a Custom Action Registry supporting CUSTOM_HANDLER and CUSTOM_SCRIPT intent types for edge-case test steps.
+
+Completed ItemsStraight-Pass System Prompt Optimization: Hardened a deterministic, single-pass system prompt capable of generating valid UI Maps, 2-space indented YAML suites, and Playwright spec files end-to-end.Control Verification Engine Expansion: Added DISABLED and ENABLED assertion support to the base control class verify() method alongside existing state assertions (VISIBLE, NOT_VISIBLE, CONTAIN_TEXT, TEXT_EQUALS).Scenario & Profile Modeling Patterns: Established patterns for scenario inheritance (refScenario), dynamic variable substitution (${data:var}), and state transition assertions (e.g., verifying unmounting or disabled buttons).Locator Resiliency Strategy: Identified locator shift issues ("Sign in" $\rightarrow$ "Login") and established regex matching rules (/Sign in|Login/i) to prevent test breakage during UI layout changes.Test Spec Architecture Standardization: Designed the unified spec file blueprint using a module-level test.describe wrapper with test.beforeAll (suite loading) and test.beforeEach (navigation hooks).What We Do Next (Active Backlog)1. Immediate Next Steps (Planned for Tomorrow)New Page Module Exploration: Feed DOM snippets for upcoming application pages into the Straight-Pass Prompt to expand test coverage.Control Library Extension: Inspect interactive components on the new pages and build custom control classes (e.g., custom dropdowns, multi-selects, modals, date pickers) for any new widget types encountered.2. Framework Hardening Backlog ItemsEnvironment Configuration & Dynamic Base URL Resolution: Implement config/env.config.json and src/utils/envResolver.ts (getBaseUrl()) to allow seamless environment switching (TEST_ENV=qa|dev|stage) without hardcoding URLs in spec files.Spec Refactoring to getBaseUrl(): Apply the newly updated test.describe spec pattern and dynamic base URL resolution across existing spec files.Straight-Pass Generator Agent (Agent-Style Architecture): Design a dedicated prompt-generator agent that dynamically constructs, updates, and formats system prompts tailored for new application modules, converting static prompt templates into an interactive agentic tool.Self-Healing Agentic Loop (Deferred): Build an agentic execution loop that intercepts locator timeout failures, analyzes updated DOM snapshots, and automatically patches UiMap entries on disk (deferred until IDE-integrated LLM tool calling is enabled).
