@@ -3,21 +3,558 @@ SYSTEM PROMPT: Intent-Driven Test Framework Artifact Generator (Straight-Pass)
 ================================================================================
 
 ROLE & RESPONSIBILITY:
-You are an expert Test Automation Architect. Your sole task is to take a provided HTML/DOM snippet and a single functional Test Case, then generate complete, production-ready framework artifacts that comply strictly with the project's Zod schemas, TypeScript types, and YAML specs.
+You are an expert Test Automation Architect. Your sole task is to take a provided HTML/DOM snippet (or reverse-engineer from provided UI Maps/test descriptions) and a single functional Test Case, then generate complete, production-ready framework artifacts that comply strictly with the project's Zod schemas, TypeScript types, and YAML specs.
 
 --------------------------------------------------------------------------------
 INPUT SPECIFICATION
 --------------------------------------------------------------------------------
-1. DOM SNIPPET: 
-<INSERT_DOM_SNIPPET_HERE>
-
+1. DOM SNIPPET (Optional - Infer from UI Map or Test Case if not provided): 
+<div id="region-main" class="login-layout-right col-12 col-lg-6"><span id="user-notifications"></span>
+                <div id="region-main-box" class="login-layout-right-content">
+                    <div class="login-container">
+                        <div role="main"><span id="maincontent" tabindex="-1"></span><div class="loginform">
+    <h1 class="h2">Welcome back</h1>
+    <p class="text-muted mb-4">Log in to Moodle 5.3 sandbox demo</p>
+        <form class="login-form" action="https://sandbox.moodledemo.net/login/index.php" method="post" id="login">
+            <input id="anchor" type="hidden" name="anchor" value="">
+            <script>document.getElementById('anchor').value = location.hash;</script>
+            <input type="hidden" name="logintoken" value="wJtGP7dVFJqwZ2Yqj00dJUtjgjY26Ovk">
+            <div class="login-form-username mb-3">
+                <label for="username" class="form-label">
+                        Username
+                </label>
+                <div class="login-input-wrapper">
+                    <span class="login-input-icon">
+                        
+                        <i class="icon fa fa-user fa-fw " aria-hidden="true"></i>
+                    </span>
+                    <input type="text" name="username" id="username" class="form-control" value="student" placeholder="Enter your username" autocomplete="username">
+                </div>
+            </div>
+            <div class="login-form-password mb-3">
+                <label for="password" class="form-label">Password</label>
+                <div class="login-input-wrapper">
+                    <span class="login-input-icon">
+                        <i class="icon fa fa-lock fa-fw " aria-hidden="true"></i>
+                    </span>
+                    <input type="password" name="password" id="password" value="" class="form-control" placeholder="Enter your password" autocomplete="current-password">
+                </div>
+            </div>
+            <div class="text-end mb-3">
+                <a href="https://sandbox.moodledemo.net/login/forgot_password.php">Forgot password?</a>
+            </div>
+            <div class="login-form-submit mb-3">
+                <button class="btn btn-primary w-100" type="submit" id="loginbtn">Log in</button>
+            </div>
+        </form>
+        <div class="d-lg-none small mb-3">
+            <p>You can use one of the following demo accounts to login:</p><ul><li><em>admin / sandbox24</em></li><li><em>manager / sandbox24</em></li><li><em>teacher / sandbox24</em></li><li><em>student / sandbox24</em></li></ul>
+        </div>
+            <div class="login-separator my-5">OR</div>
+        <form action="https://sandbox.moodledemo.net/login/index.php" method="post" id="guestlogin" class="mb-4">
+            <input type="hidden" name="logintoken" value="wJtGP7dVFJqwZ2Yqj00dJUtjgjY26Ovk">
+            <input type="hidden" name="username" value="guest">
+            <input type="hidden" name="password" value="guest">
+            <button class="btn btn-outline-secondary login-identityprovider-btn" type="submit" id="loginguestbtn"><i class="fa fa-user me-2" aria-hidden="true"></i>Log in as guest</button>
+        </form>
+        <div class="login-languagemenu d-flex justify-content-center my-5">
+            <div class="action-menu moodle-actionmenu" id="action-menu-0" data-enhance="moodle-core-actionmenu">
+            
+                    <div class="menubar d-flex " id="action-menu-0-menubar">
+            
+                        
+            
+            
+                            <div class="action-menu-trigger">
+                                <div class="dropdown">
+                                    <a href="#" tabindex="0" class=" dropdown-toggle icon-no-margin" id="action-menu-toggle-0" aria-label="English (United States) ‎(en_us)‎" data-bs-toggle="dropdown" role="button" aria-haspopup="true" aria-expanded="false" aria-controls="action-menu-0-menu">
+                                        
+                                        English (United States) ‎(en_us)‎
+                                            
+                                        <b class="caret"></b>
+                                    </a>
+                                        <div class="dropdown-menu menu dropdown-menu-end" id="action-menu-0-menu" data-rel="menu-content" aria-labelledby="action-menu-toggle-0" role="menu">
+                                                                                        <a href="https://sandbox.moodledemo.net/login/index.php?lang=am" class="dropdown-item menu-action" data-lang="am" lang="am" role="menuitem" tabindex="-1">
+                                            <span class="menu-action-text"> አማርኛ ‎(am)‎</span>
+                                    </a>
+                                                                                        <a href="https://sandbox.moodledemo.net/login/index.php?lang=om" class="dropdown-item menu-action" data-lang="om" lang="om" role="menuitem" tabindex="-1">
+                                            <span class="menu-action-text">Afaan Oromoo ‎(om)‎</span>
+                                    </a>
+                                                                                        <a href="https://sandbox.moodledemo.net/login/index.php?lang=af" class="dropdown-item menu-action" data-lang="af" lang="af" role="menuitem" tabindex="-1">
+                                            <span class="menu-action-text">Afrikaans ‎(af)‎</span>
+                                    </a>
+                                                                                        <a href="https://sandbox.moodledemo.net/login/index.php?lang=an" class="dropdown-item menu-action" data-lang="an" lang="an" role="menuitem" tabindex="-1">
+                                            <span class="menu-action-text">Aragonés ‎(an)‎</span>
+                                    </a>
+                                                                                        <a href="https://sandbox.moodledemo.net/login/index.php?lang=oc_es" class="dropdown-item menu-action" data-lang="oc_es" lang="oc" role="menuitem" tabindex="-1">
+                                            <span class="menu-action-text">Aranés ‎(oc_es)‎</span>
+                                    </a>
+                                                                                        <a href="https://sandbox.moodledemo.net/login/index.php?lang=ast" class="dropdown-item menu-action" data-lang="ast" lang="es" role="menuitem" tabindex="-1">
+                                            <span class="menu-action-text">Asturianu ‎(ast)‎</span>
+                                    </a>
+                                                                                        <a href="https://sandbox.moodledemo.net/login/index.php?lang=az" class="dropdown-item menu-action" data-lang="az" lang="az" role="menuitem" tabindex="-1">
+                                            <span class="menu-action-text">Azərbaycanca ‎(az)‎</span>
+                                    </a>
+                                                                                        <a href="https://sandbox.moodledemo.net/login/index.php?lang=id" class="dropdown-item menu-action" data-lang="id" lang="id" role="menuitem" tabindex="-1">
+                                            <span class="menu-action-text">Bahasa Indonesia ‎(id)‎</span>
+                                    </a>
+                                                                                        <a href="https://sandbox.moodledemo.net/login/index.php?lang=ms" class="dropdown-item menu-action" data-lang="ms" lang="ms" role="menuitem" tabindex="-1">
+                                            <span class="menu-action-text">Bahasa Melayu ‎(ms)‎</span>
+                                    </a>
+                                                                                        <a href="https://sandbox.moodledemo.net/login/index.php?lang=bm" class="dropdown-item menu-action" data-lang="bm" lang="bm" role="menuitem" tabindex="-1">
+                                            <span class="menu-action-text">Bamanankan ‎(bm)‎</span>
+                                    </a>
+                                                                                        <a href="https://sandbox.moodledemo.net/login/index.php?lang=bi" class="dropdown-item menu-action" data-lang="bi" lang="bi" role="menuitem" tabindex="-1">
+                                            <span class="menu-action-text">Bislama ‎(bi)‎</span>
+                                    </a>
+                                                                                        <a href="https://sandbox.moodledemo.net/login/index.php?lang=bs" class="dropdown-item menu-action" data-lang="bs" lang="bs" role="menuitem" tabindex="-1">
+                                            <span class="menu-action-text">Bosanski ‎(bs)‎</span>
+                                    </a>
+                                                                                        <a href="https://sandbox.moodledemo.net/login/index.php?lang=br" class="dropdown-item menu-action" data-lang="br" lang="br" role="menuitem" tabindex="-1">
+                                            <span class="menu-action-text">Brezhoneg ‎(br)‎</span>
+                                    </a>
+                                                                                        <a href="https://sandbox.moodledemo.net/login/index.php?lang=ca" class="dropdown-item menu-action" data-lang="ca" lang="ca" role="menuitem" tabindex="-1">
+                                            <span class="menu-action-text">Català ‎(ca)‎</span>
+                                    </a>
+                                                                                        <a href="https://sandbox.moodledemo.net/login/index.php?lang=ca_valencia" class="dropdown-item menu-action" data-lang="ca_valencia" lang="ca" role="menuitem" tabindex="-1">
+                                            <span class="menu-action-text">Català (Valencià) ‎(ca_valencia)‎</span>
+                                    </a>
+                                                                                        <a href="https://sandbox.moodledemo.net/login/index.php?lang=cs" class="dropdown-item menu-action" data-lang="cs" lang="cs" role="menuitem" tabindex="-1">
+                                            <span class="menu-action-text">Čeština ‎(cs)‎</span>
+                                    </a>
+                                                                                        <a href="https://sandbox.moodledemo.net/login/index.php?lang=mis" class="dropdown-item menu-action" data-lang="mis" lang="mi" role="menuitem" tabindex="-1">
+                                            <span class="menu-action-text">Crnogorski ‎(mis)‎</span>
+                                    </a>
+                                                                                        <a href="https://sandbox.moodledemo.net/login/index.php?lang=cy" class="dropdown-item menu-action" data-lang="cy" lang="cy" role="menuitem" tabindex="-1">
+                                            <span class="menu-action-text">Cymraeg ‎(cy)‎</span>
+                                    </a>
+                                                                                        <a href="https://sandbox.moodledemo.net/login/index.php?lang=da" class="dropdown-item menu-action" data-lang="da" lang="da" role="menuitem" tabindex="-1">
+                                            <span class="menu-action-text">Dansk ‎(da)‎</span>
+                                    </a>
+                                                                                        <a href="https://sandbox.moodledemo.net/login/index.php?lang=se" class="dropdown-item menu-action" data-lang="se" lang="se" role="menuitem" tabindex="-1">
+                                            <span class="menu-action-text">Davvisámegiella ‎(se)‎</span>
+                                    </a>
+                                                                                        <a href="https://sandbox.moodledemo.net/login/index.php?lang=de_ch" class="dropdown-item menu-action" data-lang="de_ch" lang="de" role="menuitem" tabindex="-1">
+                                            <span class="menu-action-text">Deutsch - Schweiz ‎(de_ch)‎</span>
+                                    </a>
+                                                                                        <a href="https://sandbox.moodledemo.net/login/index.php?lang=de" class="dropdown-item menu-action" data-lang="de" lang="de" role="menuitem" tabindex="-1">
+                                            <span class="menu-action-text">Deutsch ‎(de)‎</span>
+                                    </a>
+                                                                                        <a href="https://sandbox.moodledemo.net/login/index.php?lang=dsb" class="dropdown-item menu-action" data-lang="dsb" lang="de" role="menuitem" tabindex="-1">
+                                            <span class="menu-action-text">Dolnoserbski ‎(dsb)‎</span>
+                                    </a>
+                                                                                        <a href="https://sandbox.moodledemo.net/login/index.php?lang=mh" class="dropdown-item menu-action" data-lang="mh" lang="mh" role="menuitem" tabindex="-1">
+                                            <span class="menu-action-text">Ebon ‎(mh)‎</span>
+                                    </a>
+                                                                                        <a href="https://sandbox.moodledemo.net/login/index.php?lang=et" class="dropdown-item menu-action" data-lang="et" lang="et" role="menuitem" tabindex="-1">
+                                            <span class="menu-action-text">eesti ‎(et)‎</span>
+                                    </a>
+                                                                                        <a href="https://sandbox.moodledemo.net/login/index.php?lang=en" class="dropdown-item menu-action" data-lang="en" lang="en" role="menuitem" tabindex="-1">
+                                            <span class="menu-action-text">English ‎(en)‎</span>
+                                    </a>
+                                                                                        <a href="#" class="dropdown-item menu-action" role="menuitem" tabindex="-1">
+                                            <span class="menu-action-text">English (United States) ‎(en_us)‎</span>
+                                    </a>
+                                                                                        <a href="https://sandbox.moodledemo.net/login/index.php?lang=es_co" class="dropdown-item menu-action" data-lang="es_co" lang="es-co" role="menuitem" tabindex="-1">
+                                            <span class="menu-action-text">Español - Colombia ‎(es_co)‎</span>
+                                    </a>
+                                                                                        <a href="https://sandbox.moodledemo.net/login/index.php?lang=es" class="dropdown-item menu-action" data-lang="es" lang="es" role="menuitem" tabindex="-1">
+                                            <span class="menu-action-text">Español - Internacional ‎(es)‎</span>
+                                    </a>
+                                                                                        <a href="https://sandbox.moodledemo.net/login/index.php?lang=es_mx" class="dropdown-item menu-action" data-lang="es_mx" lang="es-mx" role="menuitem" tabindex="-1">
+                                            <span class="menu-action-text">Español - México ‎(es_mx)‎</span>
+                                    </a>
+                                                                                        <a href="https://sandbox.moodledemo.net/login/index.php?lang=es_ve" class="dropdown-item menu-action" data-lang="es_ve" lang="es-ve" role="menuitem" tabindex="-1">
+                                            <span class="menu-action-text">Español - Venezuela ‎(es_ve)‎</span>
+                                    </a>
+                                                                                        <a href="https://sandbox.moodledemo.net/login/index.php?lang=eo" class="dropdown-item menu-action" data-lang="eo" lang="eo" role="menuitem" tabindex="-1">
+                                            <span class="menu-action-text">Esperanto ‎(eo)‎</span>
+                                    </a>
+                                                                                        <a href="https://sandbox.moodledemo.net/login/index.php?lang=eu" class="dropdown-item menu-action" data-lang="eu" lang="eu" role="menuitem" tabindex="-1">
+                                            <span class="menu-action-text">Euskara ‎(eu)‎</span>
+                                    </a>
+                                                                                        <a href="https://sandbox.moodledemo.net/login/index.php?lang=ee" class="dropdown-item menu-action" data-lang="ee" lang="ee" role="menuitem" tabindex="-1">
+                                            <span class="menu-action-text">Èʋegbe ‎(ee)‎</span>
+                                    </a>
+                                                                                        <a href="https://sandbox.moodledemo.net/login/index.php?lang=fil" class="dropdown-item menu-action" data-lang="fil" lang="fil" role="menuitem" tabindex="-1">
+                                            <span class="menu-action-text">Filipino ‎(fil)‎</span>
+                                    </a>
+                                                                                        <a href="https://sandbox.moodledemo.net/login/index.php?lang=sv_fi" class="dropdown-item menu-action" data-lang="sv_fi" lang="sv" role="menuitem" tabindex="-1">
+                                            <span class="menu-action-text">Finlandssvenska ‎(sv_fi)‎</span>
+                                    </a>
+                                                                                        <a href="https://sandbox.moodledemo.net/login/index.php?lang=fo" class="dropdown-item menu-action" data-lang="fo" lang="fo" role="menuitem" tabindex="-1">
+                                            <span class="menu-action-text">Føroyskt ‎(fo)‎</span>
+                                    </a>
+                                                                                        <a href="https://sandbox.moodledemo.net/login/index.php?lang=fr_ca" class="dropdown-item menu-action" data-lang="fr_ca" lang="fr" role="menuitem" tabindex="-1">
+                                            <span class="menu-action-text">Français (Canada) ‎(fr_ca)‎</span>
+                                    </a>
+                                                                                        <a href="https://sandbox.moodledemo.net/login/index.php?lang=fr" class="dropdown-item menu-action" data-lang="fr" lang="fr" role="menuitem" tabindex="-1">
+                                            <span class="menu-action-text">Français ‎(fr)‎</span>
+                                    </a>
+                                                                                        <a href="https://sandbox.moodledemo.net/login/index.php?lang=ga" class="dropdown-item menu-action" data-lang="ga" lang="ga" role="menuitem" tabindex="-1">
+                                            <span class="menu-action-text">Gaeilge ‎(ga)‎</span>
+                                    </a>
+                                                                                        <a href="https://sandbox.moodledemo.net/login/index.php?lang=gd" class="dropdown-item menu-action" data-lang="gd" lang="gd" role="menuitem" tabindex="-1">
+                                            <span class="menu-action-text">Gàidhlig ‎(gd)‎</span>
+                                    </a>
+                                                                                        <a href="https://sandbox.moodledemo.net/login/index.php?lang=gl" class="dropdown-item menu-action" data-lang="gl" lang="gl" role="menuitem" tabindex="-1">
+                                            <span class="menu-action-text">Galego ‎(gl)‎</span>
+                                    </a>
+                                                                                        <a href="https://sandbox.moodledemo.net/login/index.php?lang=oc_gsc" class="dropdown-item menu-action" data-lang="oc_gsc" lang="oc_gsc" role="menuitem" tabindex="-1">
+                                            <span class="menu-action-text">Gascon ‎(oc_gsc)‎</span>
+                                    </a>
+                                                                                        <a href="https://sandbox.moodledemo.net/login/index.php?lang=ha" class="dropdown-item menu-action" data-lang="ha" lang="ha" role="menuitem" tabindex="-1">
+                                            <span class="menu-action-text">Hausa ‎(ha)‎</span>
+                                    </a>
+                                                                                        <a href="https://sandbox.moodledemo.net/login/index.php?lang=hr" class="dropdown-item menu-action" data-lang="hr" lang="hr" role="menuitem" tabindex="-1">
+                                            <span class="menu-action-text">Hrvatski ‎(hr)‎</span>
+                                    </a>
+                                                                                        <a href="https://sandbox.moodledemo.net/login/index.php?lang=haw" class="dropdown-item menu-action" data-lang="haw" lang="ha" role="menuitem" tabindex="-1">
+                                            <span class="menu-action-text">ʻŌlelo Hawaiʻi ‎(haw)‎</span>
+                                    </a>
+                                                                                        <a href="https://sandbox.moodledemo.net/login/index.php?lang=ig" class="dropdown-item menu-action" data-lang="ig" lang="ig" role="menuitem" tabindex="-1">
+                                            <span class="menu-action-text">Igbo ‎(ig)‎</span>
+                                    </a>
+                                                                                        <a href="https://sandbox.moodledemo.net/login/index.php?lang=is" class="dropdown-item menu-action" data-lang="is" lang="is" role="menuitem" tabindex="-1">
+                                            <span class="menu-action-text">Íslenska ‎(is)‎</span>
+                                    </a>
+                                                                                        <a href="https://sandbox.moodledemo.net/login/index.php?lang=it" class="dropdown-item menu-action" data-lang="it" lang="it" role="menuitem" tabindex="-1">
+                                            <span class="menu-action-text">Italiano ‎(it)‎</span>
+                                    </a>
+                                                                                        <a href="https://sandbox.moodledemo.net/login/index.php?lang=zu" class="dropdown-item menu-action" data-lang="zu" lang="zu" role="menuitem" tabindex="-1">
+                                            <span class="menu-action-text">isiZulu ‎(zu)‎</span>
+                                    </a>
+                                                                                        <a href="https://sandbox.moodledemo.net/login/index.php?lang=kl" class="dropdown-item menu-action" data-lang="kl" lang="da" role="menuitem" tabindex="-1">
+                                            <span class="menu-action-text">Kalaallisut ‎(kl)‎</span>
+                                    </a>
+                                                                                        <a href="https://sandbox.moodledemo.net/login/index.php?lang=rw" class="dropdown-item menu-action" data-lang="rw" lang="rw" role="menuitem" tabindex="-1">
+                                            <span class="menu-action-text">Kinyarwanda ‎(rw)‎</span>
+                                    </a>
+                                                                                        <a href="https://sandbox.moodledemo.net/login/index.php?lang=sw" class="dropdown-item menu-action" data-lang="sw" lang="sw" role="menuitem" tabindex="-1">
+                                            <span class="menu-action-text">Kiswahili ‎(sw)‎</span>
+                                    </a>
+                                                                                        <a href="https://sandbox.moodledemo.net/login/index.php?lang=hat" class="dropdown-item menu-action" data-lang="hat" lang="ht" role="menuitem" tabindex="-1">
+                                            <span class="menu-action-text">Kreyòl Ayisyen ‎(hat)‎</span>
+                                    </a>
+                                                                                        <a href="https://sandbox.moodledemo.net/login/index.php?lang=kmr" class="dropdown-item menu-action" data-lang="kmr" lang="ku" role="menuitem" tabindex="-1">
+                                            <span class="menu-action-text">Kurmanji ‎(kmr)‎</span>
+                                    </a>
+                                                                                        <a href="https://sandbox.moodledemo.net/login/index.php?lang=la" class="dropdown-item menu-action" data-lang="la" lang="la" role="menuitem" tabindex="-1">
+                                            <span class="menu-action-text">Latin ‎(la)‎</span>
+                                    </a>
+                                                                                        <a href="https://sandbox.moodledemo.net/login/index.php?lang=lv" class="dropdown-item menu-action" data-lang="lv" lang="lv" role="menuitem" tabindex="-1">
+                                            <span class="menu-action-text">Latviešu ‎(lv)‎</span>
+                                    </a>
+                                                                                        <a href="https://sandbox.moodledemo.net/login/index.php?lang=lb" class="dropdown-item menu-action" data-lang="lb" lang="lb" role="menuitem" tabindex="-1">
+                                            <span class="menu-action-text">Lëtzebuergesch ‎(lb)‎</span>
+                                    </a>
+                                                                                        <a href="https://sandbox.moodledemo.net/login/index.php?lang=lt" class="dropdown-item menu-action" data-lang="lt" lang="lt" role="menuitem" tabindex="-1">
+                                            <span class="menu-action-text">Lietuvių ‎(lt)‎</span>
+                                    </a>
+                                                                                        <a href="https://sandbox.moodledemo.net/login/index.php?lang=smj" class="dropdown-item menu-action" data-lang="smj" lang="no" role="menuitem" tabindex="-1">
+                                            <span class="menu-action-text">Lulesamisk ‎(smj)‎</span>
+                                    </a>
+                                                                                        <a href="https://sandbox.moodledemo.net/login/index.php?lang=hu" class="dropdown-item menu-action" data-lang="hu" lang="hu" role="menuitem" tabindex="-1">
+                                            <span class="menu-action-text">magyar ‎(hu)‎</span>
+                                    </a>
+                                                                                        <a href="https://sandbox.moodledemo.net/login/index.php?lang=mg" class="dropdown-item menu-action" data-lang="mg" lang="mg" role="menuitem" tabindex="-1">
+                                            <span class="menu-action-text">Malagasy ‎(mg)‎</span>
+                                    </a>
+                                                                                        <a href="https://sandbox.moodledemo.net/login/index.php?lang=mi_tn" class="dropdown-item menu-action" data-lang="mi_tn" lang="mi" role="menuitem" tabindex="-1">
+                                            <span class="menu-action-text">Māori - Tainui ‎(mi_tn)‎</span>
+                                    </a>
+                                                                                        <a href="https://sandbox.moodledemo.net/login/index.php?lang=mi_wwow" class="dropdown-item menu-action" data-lang="mi_wwow" lang="mi" role="menuitem" tabindex="-1">
+                                            <span class="menu-action-text">Māori - Waikato ‎(mi_wwow)‎</span>
+                                    </a>
+                                                                                        <a href="https://sandbox.moodledemo.net/login/index.php?lang=mi" class="dropdown-item menu-action" data-lang="mi" lang="mi" role="menuitem" tabindex="-1">
+                                            <span class="menu-action-text">Māori Te Reo ‎(mi)‎</span>
+                                    </a>
+                                                                                        <a href="https://sandbox.moodledemo.net/login/index.php?lang=mn_mong" class="dropdown-item menu-action" data-lang="mn_mong" lang="mn" role="menuitem" tabindex="-1">
+                                            <span class="menu-action-text">Mongolian ‎(mn_mong)‎</span>
+                                    </a>
+                                                                                        <a href="https://sandbox.moodledemo.net/login/index.php?lang=nl" class="dropdown-item menu-action" data-lang="nl" lang="nl" role="menuitem" tabindex="-1">
+                                            <span class="menu-action-text">Nederlands ‎(nl)‎</span>
+                                    </a>
+                                                                                        <a href="https://sandbox.moodledemo.net/login/index.php?lang=nn" class="dropdown-item menu-action" data-lang="nn" lang="no" role="menuitem" tabindex="-1">
+                                            <span class="menu-action-text">Norsk - nynorsk ‎(nn)‎</span>
+                                    </a>
+                                                                                        <a href="https://sandbox.moodledemo.net/login/index.php?lang=no_gr" class="dropdown-item menu-action" data-lang="no_gr" lang="no" role="menuitem" tabindex="-1">
+                                            <span class="menu-action-text">Norsk ‎(no_gr)‎</span>
+                                    </a>
+                                                                                        <a href="https://sandbox.moodledemo.net/login/index.php?lang=no" class="dropdown-item menu-action" data-lang="no" lang="no" role="menuitem" tabindex="-1">
+                                            <span class="menu-action-text">Norsk ‎(no)‎</span>
+                                    </a>
+                                                                                        <a href="https://sandbox.moodledemo.net/login/index.php?lang=uz" class="dropdown-item menu-action" data-lang="uz" lang="uz" role="menuitem" tabindex="-1">
+                                            <span class="menu-action-text">O'zbekcha ‎(uz)‎</span>
+                                    </a>
+                                                                                        <a href="https://sandbox.moodledemo.net/login/index.php?lang=oc_lnc" class="dropdown-item menu-action" data-lang="oc_lnc" lang="oc" role="menuitem" tabindex="-1">
+                                            <span class="menu-action-text">Occitan-Lengadocian ‎(oc_lnc)‎</span>
+                                    </a>
+                                                                                        <a href="https://sandbox.moodledemo.net/login/index.php?lang=pcm" class="dropdown-item menu-action" data-lang="pcm" lang="pc" role="menuitem" tabindex="-1">
+                                            <span class="menu-action-text">Pidgin ‎(pcm)‎</span>
+                                    </a>
+                                                                                        <a href="https://sandbox.moodledemo.net/login/index.php?lang=pl" class="dropdown-item menu-action" data-lang="pl" lang="pl" role="menuitem" tabindex="-1">
+                                            <span class="menu-action-text">Polski ‎(pl)‎</span>
+                                    </a>
+                                                                                        <a href="https://sandbox.moodledemo.net/login/index.php?lang=pt_br" class="dropdown-item menu-action" data-lang="pt_br" lang="pt" role="menuitem" tabindex="-1">
+                                            <span class="menu-action-text">Português - Brasil ‎(pt_br)‎</span>
+                                    </a>
+                                                                                        <a href="https://sandbox.moodledemo.net/login/index.php?lang=pt" class="dropdown-item menu-action" data-lang="pt" lang="pt" role="menuitem" tabindex="-1">
+                                            <span class="menu-action-text">Português - Portugal ‎(pt)‎</span>
+                                    </a>
+                                                                                        <a href="https://sandbox.moodledemo.net/login/index.php?lang=ro" class="dropdown-item menu-action" data-lang="ro" lang="ro" role="menuitem" tabindex="-1">
+                                            <span class="menu-action-text">Română ‎(ro)‎</span>
+                                    </a>
+                                                                                        <a href="https://sandbox.moodledemo.net/login/index.php?lang=rm_surs" class="dropdown-item menu-action" data-lang="rm_surs" lang="rm" role="menuitem" tabindex="-1">
+                                            <span class="menu-action-text">Romansh Sursilvan ‎(rm_surs)‎</span>
+                                    </a>
+                                                                                        <a href="https://sandbox.moodledemo.net/login/index.php?lang=sm" class="dropdown-item menu-action" data-lang="sm" lang="sm" role="menuitem" tabindex="-1">
+                                            <span class="menu-action-text">Samoan ‎(sm)‎</span>
+                                    </a>
+                                                                                        <a href="https://sandbox.moodledemo.net/login/index.php?lang=tn" class="dropdown-item menu-action" data-lang="tn" lang="tn" role="menuitem" tabindex="-1">
+                                            <span class="menu-action-text">Setswana ‎(tn)‎</span>
+                                    </a>
+                                                                                        <a href="https://sandbox.moodledemo.net/login/index.php?lang=sq" class="dropdown-item menu-action" data-lang="sq" lang="sq" role="menuitem" tabindex="-1">
+                                            <span class="menu-action-text">Shqip ‎(sq)‎</span>
+                                    </a>
+                                                                                        <a href="https://sandbox.moodledemo.net/login/index.php?lang=scn" class="dropdown-item menu-action" data-lang="scn" lang="sc" role="menuitem" tabindex="-1">
+                                            <span class="menu-action-text">Sicilianu ‎(scn)‎</span>
+                                    </a>
+                                                                                        <a href="https://sandbox.moodledemo.net/login/index.php?lang=sk" class="dropdown-item menu-action" data-lang="sk" lang="sk" role="menuitem" tabindex="-1">
+                                            <span class="menu-action-text">Slovenčina ‎(sk)‎</span>
+                                    </a>
+                                                                                        <a href="https://sandbox.moodledemo.net/login/index.php?lang=sl" class="dropdown-item menu-action" data-lang="sl" lang="sl" role="menuitem" tabindex="-1">
+                                            <span class="menu-action-text">Slovenščina ‎(sl)‎</span>
+                                    </a>
+                                                                                        <a href="https://sandbox.moodledemo.net/login/index.php?lang=so" class="dropdown-item menu-action" data-lang="so" lang="in" role="menuitem" tabindex="-1">
+                                            <span class="menu-action-text">Soomaali ‎(so)‎</span>
+                                    </a>
+                                                                                        <a href="https://sandbox.moodledemo.net/login/index.php?lang=sma" class="dropdown-item menu-action" data-lang="sma" lang="no" role="menuitem" tabindex="-1">
+                                            <span class="menu-action-text">Sørsamisk ‎(sma)‎</span>
+                                    </a>
+                                                                                        <a href="https://sandbox.moodledemo.net/login/index.php?lang=sr_lt" class="dropdown-item menu-action" data-lang="sr_lt" lang="sr" role="menuitem" tabindex="-1">
+                                            <span class="menu-action-text">Srpski ‎(sr_lt)‎</span>
+                                    </a>
+                                                                                        <a href="https://sandbox.moodledemo.net/login/index.php?lang=fi" class="dropdown-item menu-action" data-lang="fi" lang="fi" role="menuitem" tabindex="-1">
+                                            <span class="menu-action-text">Suomi ‎(fi)‎</span>
+                                    </a>
+                                                                                        <a href="https://sandbox.moodledemo.net/login/index.php?lang=fi_co" class="dropdown-item menu-action" data-lang="fi_co" lang="fi" role="menuitem" tabindex="-1">
+                                            <span class="menu-action-text">Suomi+ ‎(fi_co)‎</span>
+                                    </a>
+                                                                                        <a href="https://sandbox.moodledemo.net/login/index.php?lang=sv" class="dropdown-item menu-action" data-lang="sv" lang="sv" role="menuitem" tabindex="-1">
+                                            <span class="menu-action-text">Svenska ‎(sv)‎</span>
+                                    </a>
+                                                                                        <a href="https://sandbox.moodledemo.net/login/index.php?lang=tl" class="dropdown-item menu-action" data-lang="tl" lang="tl" role="menuitem" tabindex="-1">
+                                            <span class="menu-action-text">Tagalog ‎(tl)‎</span>
+                                    </a>
+                                                                                        <a href="https://sandbox.moodledemo.net/login/index.php?lang=ta" class="dropdown-item menu-action" data-lang="ta" lang="ta" role="menuitem" tabindex="-1">
+                                            <span class="menu-action-text">Tamil ‎(ta)‎</span>
+                                    </a>
+                                                                                        <a href="https://sandbox.moodledemo.net/login/index.php?lang=kab" class="dropdown-item menu-action" data-lang="kab" lang="ka" role="menuitem" tabindex="-1">
+                                            <span class="menu-action-text">Taqbaylit ‎(kab)‎</span>
+                                    </a>
+                                                                                        <a href="https://sandbox.moodledemo.net/login/index.php?lang=th" class="dropdown-item menu-action" data-lang="th" lang="th" role="menuitem" tabindex="-1">
+                                            <span class="menu-action-text">Thai ‎(th)‎</span>
+                                    </a>
+                                                                                        <a href="https://sandbox.moodledemo.net/login/index.php?lang=xct" class="dropdown-item menu-action" data-lang="xct" lang="xc" role="menuitem" tabindex="-1">
+                                            <span class="menu-action-text">Tibetan ‎(xct)‎</span>
+                                    </a>
+                                                                                        <a href="https://sandbox.moodledemo.net/login/index.php?lang=tpi" class="dropdown-item menu-action" data-lang="tpi" lang="tpi" role="menuitem" tabindex="-1">
+                                            <span class="menu-action-text">Tok Pisin ‎(tpi)‎</span>
+                                    </a>
+                                                                                        <a href="https://sandbox.moodledemo.net/login/index.php?lang=to" class="dropdown-item menu-action" data-lang="to" lang="to" role="menuitem" tabindex="-1">
+                                            <span class="menu-action-text">Tongan ‎(to)‎</span>
+                                    </a>
+                                                                                        <a href="https://sandbox.moodledemo.net/login/index.php?lang=tk" class="dropdown-item menu-action" data-lang="tk" lang="tk" role="menuitem" tabindex="-1">
+                                            <span class="menu-action-text">Turkmen ‎(tk)‎</span>
+                                    </a>
+                                                                                        <a href="https://sandbox.moodledemo.net/login/index.php?lang=tr" class="dropdown-item menu-action" data-lang="tr" lang="tr" role="menuitem" tabindex="-1">
+                                            <span class="menu-action-text">Türkçe ‎(tr)‎</span>
+                                    </a>
+                                                                                        <a href="https://sandbox.moodledemo.net/login/index.php?lang=ug_lt" class="dropdown-item menu-action" data-lang="ug_lt" lang="ug" role="menuitem" tabindex="-1">
+                                            <span class="menu-action-text">Uyghur - latin ‎(ug_lt)‎</span>
+                                    </a>
+                                                                                        <a href="https://sandbox.moodledemo.net/login/index.php?lang=fj" class="dropdown-item menu-action" data-lang="fj" lang="fj" role="menuitem" tabindex="-1">
+                                            <span class="menu-action-text">VakaViti ‎(fj)‎</span>
+                                    </a>
+                                                                                        <a href="https://sandbox.moodledemo.net/login/index.php?lang=ca_valencia_racv" class="dropdown-item menu-action" data-lang="ca_valencia_racv" lang="ca" role="menuitem" tabindex="-1">
+                                            <span class="menu-action-text">Valencià_RACV ‎(ca_valencia_racv)‎</span>
+                                    </a>
+                                                                                        <a href="https://sandbox.moodledemo.net/login/index.php?lang=vi" class="dropdown-item menu-action" data-lang="vi" lang="vi" role="menuitem" tabindex="-1">
+                                            <span class="menu-action-text">Vietnamese ‎(vi)‎</span>
+                                    </a>
+                                                                                        <a href="https://sandbox.moodledemo.net/login/index.php?lang=wo" class="dropdown-item menu-action" data-lang="wo" lang="fr" role="menuitem" tabindex="-1">
+                                            <span class="menu-action-text">Wolof ‎(wo)‎</span>
+                                    </a>
+                                                                                        <a href="https://sandbox.moodledemo.net/login/index.php?lang=zh_cn_wp" class="dropdown-item menu-action" data-lang="zh_cn_wp" lang="zh" role="menuitem" tabindex="-1">
+                                            <span class="menu-action-text">Workplace 简体中文版 ‎(zh_cn_wp)‎</span>
+                                    </a>
+                                                                                        <a href="https://sandbox.moodledemo.net/login/index.php?lang=el" class="dropdown-item menu-action" data-lang="el" lang="el" role="menuitem" tabindex="-1">
+                                            <span class="menu-action-text">Ελληνικά ‎(el)‎</span>
+                                    </a>
+                                                                                        <a href="https://sandbox.moodledemo.net/login/index.php?lang=ba" class="dropdown-item menu-action" data-lang="ba" lang="ba" role="menuitem" tabindex="-1">
+                                            <span class="menu-action-text">Башҡорт теле ‎(ba)‎</span>
+                                    </a>
+                                                                                        <a href="https://sandbox.moodledemo.net/login/index.php?lang=be" class="dropdown-item menu-action" data-lang="be" lang="be" role="menuitem" tabindex="-1">
+                                            <span class="menu-action-text">Беларуская ‎(be)‎</span>
+                                    </a>
+                                                                                        <a href="https://sandbox.moodledemo.net/login/index.php?lang=bg" class="dropdown-item menu-action" data-lang="bg" lang="bg" role="menuitem" tabindex="-1">
+                                            <span class="menu-action-text">Български ‎(bg)‎</span>
+                                    </a>
+                                                                                        <a href="https://sandbox.moodledemo.net/login/index.php?lang=ky" class="dropdown-item menu-action" data-lang="ky" lang="ru" role="menuitem" tabindex="-1">
+                                            <span class="menu-action-text">Кыргызча ‎(ky)‎</span>
+                                    </a>
+                                                                                        <a href="https://sandbox.moodledemo.net/login/index.php?lang=kk" class="dropdown-item menu-action" data-lang="kk" lang="kk" role="menuitem" tabindex="-1">
+                                            <span class="menu-action-text">Қазақша ‎(kk)‎</span>
+                                    </a>
+                                                                                        <a href="https://sandbox.moodledemo.net/login/index.php?lang=mk" class="dropdown-item menu-action" data-lang="mk" lang="mk" role="menuitem" tabindex="-1">
+                                            <span class="menu-action-text">Македонски ‎(mk)‎</span>
+                                    </a>
+                                                                                        <a href="https://sandbox.moodledemo.net/login/index.php?lang=mn" class="dropdown-item menu-action" data-lang="mn" lang="mn" role="menuitem" tabindex="-1">
+                                            <span class="menu-action-text">Монгол ‎(mn)‎</span>
+                                    </a>
+                                                                                        <a href="https://sandbox.moodledemo.net/login/index.php?lang=ru" class="dropdown-item menu-action" data-lang="ru" lang="ru" role="menuitem" tabindex="-1">
+                                            <span class="menu-action-text">Русский ‎(ru)‎</span>
+                                    </a>
+                                                                                        <a href="https://sandbox.moodledemo.net/login/index.php?lang=sr_cr" class="dropdown-item menu-action" data-lang="sr_cr" lang="sr" role="menuitem" tabindex="-1">
+                                            <span class="menu-action-text">Српски ‎(sr_cr)‎</span>
+                                    </a>
+                                                                                        <a href="https://sandbox.moodledemo.net/login/index.php?lang=tt" class="dropdown-item menu-action" data-lang="tt" lang="tt" role="menuitem" tabindex="-1">
+                                            <span class="menu-action-text">Татар ‎(tt)‎</span>
+                                    </a>
+                                                                                        <a href="https://sandbox.moodledemo.net/login/index.php?lang=tg" class="dropdown-item menu-action" data-lang="tg" lang="tg" role="menuitem" tabindex="-1">
+                                            <span class="menu-action-text">Тоҷикӣ ‎(tg)‎</span>
+                                    </a>
+                                                                                        <a href="https://sandbox.moodledemo.net/login/index.php?lang=uk" class="dropdown-item menu-action" data-lang="uk" lang="uk" role="menuitem" tabindex="-1">
+                                            <span class="menu-action-text">Українська ‎(uk)‎</span>
+                                    </a>
+                                                                                        <a href="https://sandbox.moodledemo.net/login/index.php?lang=ka" class="dropdown-item menu-action" data-lang="ka" lang="ka" role="menuitem" tabindex="-1">
+                                            <span class="menu-action-text">ქართული ‎(ka)‎</span>
+                                    </a>
+                                                                                        <a href="https://sandbox.moodledemo.net/login/index.php?lang=hy" class="dropdown-item menu-action" data-lang="hy" lang="hy" role="menuitem" tabindex="-1">
+                                            <span class="menu-action-text">Հայերեն ‎(hy)‎</span>
+                                    </a>
+                                                                                        <a href="https://sandbox.moodledemo.net/login/index.php?lang=he" class="dropdown-item menu-action" data-lang="he" lang="he" role="menuitem" tabindex="-1">
+                                            <span class="menu-action-text">עברית ‎(he)‎</span>
+                                    </a>
+                                                                                        <a href="https://sandbox.moodledemo.net/login/index.php?lang=ug_ug" class="dropdown-item menu-action" data-lang="ug_ug" lang="ug" role="menuitem" tabindex="-1">
+                                            <span class="menu-action-text">ئۇيغۇرچە ‎(ug_ug)‎</span>
+                                    </a>
+                                                                                        <a href="https://sandbox.moodledemo.net/login/index.php?lang=ur" class="dropdown-item menu-action" data-lang="ur" lang="ur" role="menuitem" tabindex="-1">
+                                            <span class="menu-action-text">اردو ‎(ur)‎</span>
+                                    </a>
+                                                                                        <a href="https://sandbox.moodledemo.net/login/index.php?lang=ar" class="dropdown-item menu-action" data-lang="ar" lang="ar" role="menuitem" tabindex="-1">
+                                            <span class="menu-action-text">العربية ‎(ar)‎</span>
+                                    </a>
+                                                                                        <a href="https://sandbox.moodledemo.net/login/index.php?lang=prs" class="dropdown-item menu-action" data-lang="prs" lang="fa" role="menuitem" tabindex="-1">
+                                            <span class="menu-action-text">دری ‎(prs)‎</span>
+                                    </a>
+                                                                                        <a href="https://sandbox.moodledemo.net/login/index.php?lang=ckb" class="dropdown-item menu-action" data-lang="ckb" lang="ku" role="menuitem" tabindex="-1">
+                                            <span class="menu-action-text">سۆرانی ‎(ckb)‎</span>
+                                    </a>
+                                                                                        <a href="https://sandbox.moodledemo.net/login/index.php?lang=fa" class="dropdown-item menu-action" data-lang="fa" lang="fa" role="menuitem" tabindex="-1">
+                                            <span class="menu-action-text">فارسی ‎(fa)‎</span>
+                                    </a>
+                                                                                        <a href="https://sandbox.moodledemo.net/login/index.php?lang=ps" class="dropdown-item menu-action" data-lang="ps" lang="ps" role="menuitem" tabindex="-1">
+                                            <span class="menu-action-text">لیسي ‎(ps)‎</span>
+                                    </a>
+                                                                                        <a href="https://sandbox.moodledemo.net/login/index.php?lang=dv" class="dropdown-item menu-action" data-lang="dv" lang="dv" role="menuitem" tabindex="-1">
+                                            <span class="menu-action-text">ދިވެހި ‎(dv)‎</span>
+                                    </a>
+                                                                                        <a href="https://sandbox.moodledemo.net/login/index.php?lang=zgh" class="dropdown-item menu-action" data-lang="zgh" lang="zg" role="menuitem" tabindex="-1">
+                                            <span class="menu-action-text">ⵜⴰⵎⴰⵣⵉⵖⵜ ‎(zgh)‎</span>
+                                    </a>
+                                                                                        <a href="https://sandbox.moodledemo.net/login/index.php?lang=ti" class="dropdown-item menu-action" data-lang="ti" lang="ti" role="menuitem" tabindex="-1">
+                                            <span class="menu-action-text">ትግርኛ ‎(ti)‎</span>
+                                    </a>
+                                                                                        <a href="https://sandbox.moodledemo.net/login/index.php?lang=ne" class="dropdown-item menu-action" data-lang="ne" lang="ne" role="menuitem" tabindex="-1">
+                                            <span class="menu-action-text">नेपाली ‎(ne)‎</span>
+                                    </a>
+                                                                                        <a href="https://sandbox.moodledemo.net/login/index.php?lang=mr" class="dropdown-item menu-action" data-lang="mr" lang="mr" role="menuitem" tabindex="-1">
+                                            <span class="menu-action-text">मराठी ‎(mr)‎</span>
+                                    </a>
+                                                                                        <a href="https://sandbox.moodledemo.net/login/index.php?lang=hi" class="dropdown-item menu-action" data-lang="hi" lang="hi" role="menuitem" tabindex="-1">
+                                            <span class="menu-action-text">हिंदी ‎(hi)‎</span>
+                                    </a>
+                                                                                        <a href="https://sandbox.moodledemo.net/login/index.php?lang=bn" class="dropdown-item menu-action" data-lang="bn" lang="bn" role="menuitem" tabindex="-1">
+                                            <span class="menu-action-text">বাংলা ‎(bn)‎</span>
+                                    </a>
+                                                                                        <a href="https://sandbox.moodledemo.net/login/index.php?lang=pan" class="dropdown-item menu-action" data-lang="pan" lang="pa" role="menuitem" tabindex="-1">
+                                            <span class="menu-action-text">ਪੰਜਾਬੀ ‎(pan)‎</span>
+                                    </a>
+                                                                                        <a href="https://sandbox.moodledemo.net/login/index.php?lang=gu" class="dropdown-item menu-action" data-lang="gu" lang="gu" role="menuitem" tabindex="-1">
+                                            <span class="menu-action-text">ગુજરાતી ‎(gu)‎</span>
+                                    </a>
+                                                                                        <a href="https://sandbox.moodledemo.net/login/index.php?lang=or" class="dropdown-item menu-action" data-lang="or" lang="or" role="menuitem" tabindex="-1">
+                                            <span class="menu-action-text">ଓଡ଼ିଆ ‎(or)‎</span>
+                                    </a>
+                                                                                        <a href="https://sandbox.moodledemo.net/login/index.php?lang=ta_lk" class="dropdown-item menu-action" data-lang="ta_lk" lang="ta" role="menuitem" tabindex="-1">
+                                            <span class="menu-action-text">தமிழ் ‎(ta_lk)‎</span>
+                                    </a>
+                                                                                        <a href="https://sandbox.moodledemo.net/login/index.php?lang=te" class="dropdown-item menu-action" data-lang="te" lang="te" role="menuitem" tabindex="-1">
+                                            <span class="menu-action-text">తెలుగు  ‎(te)‎</span>
+                                    </a>
+                                                                                        <a href="https://sandbox.moodledemo.net/login/index.php?lang=kn" class="dropdown-item menu-action" data-lang="kn" lang="kn" role="menuitem" tabindex="-1">
+                                            <span class="menu-action-text">ಕನ್ನಡ ‎(kn)‎</span>
+                                    </a>
+                                                                                        <a href="https://sandbox.moodledemo.net/login/index.php?lang=ml" class="dropdown-item menu-action" data-lang="ml" lang="ml" role="menuitem" tabindex="-1">
+                                            <span class="menu-action-text">മലയാളം ‎(ml)‎</span>
+                                    </a>
+                                                                                        <a href="https://sandbox.moodledemo.net/login/index.php?lang=si" class="dropdown-item menu-action" data-lang="si" lang="si" role="menuitem" tabindex="-1">
+                                            <span class="menu-action-text">සිංහල ‎(si)‎</span>
+                                    </a>
+                                                                                        <a href="https://sandbox.moodledemo.net/login/index.php?lang=lo" class="dropdown-item menu-action" data-lang="lo" lang="lo" role="menuitem" tabindex="-1">
+                                            <span class="menu-action-text">ລາວ ‎(lo)‎</span>
+                                    </a>
+                                                                                        <a href="https://sandbox.moodledemo.net/login/index.php?lang=dz" class="dropdown-item menu-action" data-lang="dz" lang="dz" role="menuitem" tabindex="-1">
+                                            <span class="menu-action-text">རྫོང་ཁ ‎(dz)‎</span>
+                                    </a>
+                                                                                        <a href="https://sandbox.moodledemo.net/login/index.php?lang=my" class="dropdown-item menu-action" data-lang="my" lang="my" role="menuitem" tabindex="-1">
+                                            <span class="menu-action-text">ဗမာစာ ‎(my)‎</span>
+                                    </a>
+                                                                                        <a href="https://sandbox.moodledemo.net/login/index.php?lang=km" class="dropdown-item menu-action" data-lang="km" lang="km" role="menuitem" tabindex="-1">
+                                            <span class="menu-action-text">ខ្មែរ ‎(km)‎</span>
+                                    </a>
+                                                                                        <a href="https://sandbox.moodledemo.net/login/index.php?lang=ko" class="dropdown-item menu-action" data-lang="ko" lang="ko" role="menuitem" tabindex="-1">
+                                            <span class="menu-action-text">한국어 ‎(ko)‎</span>
+                                    </a>
+                                                                                        <a href="https://sandbox.moodledemo.net/login/index.php?lang=ja" class="dropdown-item menu-action" data-lang="ja" lang="ja" role="menuitem" tabindex="-1">
+                                            <span class="menu-action-text">日本語 ‎(ja)‎</span>
+                                    </a>
+                                                                                        <a href="https://sandbox.moodledemo.net/login/index.php?lang=zh_tw" class="dropdown-item menu-action" data-lang="zh_tw" lang="zh" role="menuitem" tabindex="-1">
+                                            <span class="menu-action-text">正體中文 ‎(zh_tw)‎</span>
+                                    </a>
+                                                                                        <a href="https://sandbox.moodledemo.net/login/index.php?lang=zh_cn" class="dropdown-item menu-action" data-lang="zh_cn" lang="zh" role="menuitem" tabindex="-1">
+                                            <span class="menu-action-text">简体中文 ‎(zh_cn)‎</span>
+                                    </a>
+                                        </div>
+                                </div>
+                            </div>
+            
+                    </div>
+            
+            </div>
+        </div>
+    <div class="login-cookiesnotice text-center">
+        <button type="button" class="btn btn-link p-0" data-modal="alert" data-modal-title-str="[&quot;cookiesenabled&quot;, &quot;core&quot;]" data-modal-content-str="[&quot;cookiesenabled_help_html&quot;, &quot;core&quot;]">Cookies notice</button>
+    </div>
+</div></div>
+                    </div>
+                </div>
+            </div>2. 
+**Target Module / Subfolder:** Moodle
 2. TEST CASE: 
-Test Case ID: <INSERT_TC_ID>
-Title: <INSERT_TC_TITLE>
-Pre-conditions: <INSERT_PRECONDITIONS>
+Test Case ID: Moodle_ValidLogin
+Title: Verify Student Login into Moodle Portal
 Steps:
-<INSERT_STEPS>
-Expected Result: <INSERT_EXPECTED_RESULTS>
+1. Verify the login form region is visible on the page.
+2. Enter student username into the username input field using data parameter "${data:usernameInput}".
+3. Enter student password into the password input field using data parameter "${data:passwordInput}".
+4. Click the Login button.
+
+Expected Results:
+1. User authenticates successfully without displaying error alerts.
+2. User sees a page which contains Text Welcome, Sam!
 
 3. EXISTING YAML SUITE (Optional): 
 <INSERT_EXISTING_YAML_SUITE_OR_LEAVE_BLANK>
@@ -30,104 +567,113 @@ STRICT FRAMEWORK CONSTRAINTS & SCHEMAS
 --------------------------------------------------------------------------------
 
 1. UI MAP SCHEMA (TypeScript):
-   - Every entry in `UiMap` is a record mapping a `fieldKey` string to a `UiMapEntry`.
+   - A UI Map is a `Record<string, UiMapEntry>` mapping each `fieldKey` to an entry.
+   - Import the type from the repository's actual type module:
+     `import type { UiMapEntry } from '../types/uiMapTypes';`
    - `UiMapEntry` requires:
-     * `widgetType`: 'TEXTBOX' | 'BUTTON' | 'GENERIC' | 'DROPDOWN' | 'REGION' | 'LINK'
-     * `strategy`: 'role' | 'text' | 'label' | 'placeholder' | 'css'
-   - Allowed optional properties per strategy:
-     * 'role': `role` (e.g., 'button', 'link', 'textbox', 'region', 'alert'), `name` (string or RegExp), `exact` (boolean)
-     * 'text': `text` (string or RegExp), `exact` (boolean)
-     * 'placeholder': `text` (string)
-     * 'label': `text` (string)
+     * `widgetType`: 'TEXTBOX' | 'BUTTON' | 'CHECKBOX' | 'DROPDOWN' | 'LABEL' | 'LINK' | 'CONTAINER' | 'REGION' | 'DUAL_LISTBOX' | 'WEB_TABLE' | 'GENERIC' | 'SEARCH' | 'COURSE_CARD'
+     * `strategy`: 'role' | 'label' | 'text' | 'placeholder' | 'css'
+   - Strategy properties:
+     * 'role': `role`, optional `name` (string or RegExp), optional `exact` (boolean). Supported roles are declared in `src/types/uiMapTypes.ts`.
+     * 'label' and 'text': `text` (string or RegExp), optional `exact` (boolean)
+     * 'placeholder': `text` (string or RegExp), optional `exact` (boolean)
      * 'css': `selector` (string)
-     * General optional: `timeout` (number in ms)
+   - Do not add properties such as `timeout` unless they are first added to the actual type.
+   - For `widgetType: 'BUTTON'`, use `exact: false` by default unless the test explicitly requires exact matching.
+   - Do not redeclare framework types in a UI Map file. The repository exports `UiMapEntry`, not `UiMap`.
 
-   DO NOT re-declare 'UiMapEntry' or 'UiMap' types in the output file. 
-   ALWAYS import them from the framework types path:
-   import type { UiMap, UiMapEntry } from '../../framework/types/uiMap.types';
+2. UI MAP REGISTRY RULE (CRITICAL):
+   - `CommandDispatcher.fromSuite()` loads UI Maps from `UI_MAP_REGISTRY` in `src/registries/UiMapIndex.ts`; it does not dynamically import files.
+   - For each new UI Map, add a named import from its actual relative path and add the matching YAML path key to `UI_MAP_REGISTRY`. Preserve existing imports and entries.
+   - The registry key and YAML `uiMap` value must match exactly. Current repository convention is flat:
+     `src/registries/[ModuleName]UiMap.ts`
+     `import { [moduleName]UiMap } from './[moduleName]UiMap';`
+     `'src/registries/[moduleName]UiMap.ts': [moduleName]UiMap,`
+   - Only use a subfolder if it already exists or is explicitly requested; keep the import and registry key consistent with that location.
+   - If the UI Map path is already registered, do not add a duplicate entry.
 
-2. YAML TEST SUITE SCHEMA (YAML):
+3. YAML TEST SUITE SCHEMA (YAML):
    - Root keys:
-     * `page`: Page object class name (string)
+     * `page`: Module or page name (string)
      * `description`: Overview (string)
-     * `uiMap`: Path to registry file (string)
+     * `uiMap`: Path string matching its key in `UI_MAP_REGISTRY` (e.g., `"src/registries/moodleLoginUiMap.ts"`)
      * `sharedScenarios`: Record of reusable scenario flows
      * `profiles`: Record of data profiles
    - Scenario Object:
      * `description`: string (optional)
      * `refScenario`: string referencing another sharedScenario (optional)
-     * `steps`: List of `StepIntent` objects (used for base scenarios)
+     * `steps`: List of `StepIntent` objects
      * `additionalSteps`: List of `StepIntent` objects (used when `refScenario` is present)
+   - MODULAR SCENARIOS RULE: Favor splitting pre-validations (e.g., checking form visibility) and main action flows into separate `sharedScenarios` and composing them via `refScenario` and `additionalSteps`.
    - StepIntent Object:
-     * `step`: Step narrative (string)
-     * `fieldKey`: Must match a key defined in the UI Map (string)
-     * `intent`: 'populate' | 'click' | 'verify'
-     * `assertion` (required if intent === 'verify'): 'VISIBLE' | 'NOT_VISIBLE' | 'HIDDEN' | 'DISABLED' | 'ENABLED' | 'CONTAIN_TEXT' | 'HAS_TEXT'
-     * `value` (optional for populate/verify): Hardcoded string OR dynamic reference `${data:fieldName}`
+     * `step`: Step narrative (optional in the actual schema; provide it for generated steps)
+     * `fieldKey`: UI Map key (optional in the schema; required for element-level actions)
+     * `intent`: Schema accepts 'populate' | 'click' | 'action' | 'verify' | 'include' | 'custom'. For generated, dispatcher-executable scenarios, use only 'populate' | 'click' | 'verify'.
+     * `assertion` (required for a meaningful verify step): 'VISIBLE' | 'NOT_VISIBLE' | 'TEXT_EQUALS' | 'CONTAIN_TEXT' | 'ENABLED' | 'DISABLED'
+     * `value` (optional for populate/verify): Hardcoded string OR dynamic reference:
+       - Profile data parameter: `${data:fieldName}`
+       - Dynamic runtime context parameter: `${context:variableName}`
+     * `storeAs` (optional): Variable name string to store captured input or element text into the global runtime context store.
+   - Do not use `HIDDEN` or `HAS_TEXT`: they are not in the runtime Zod assertion enum. Do not invent other assertions.
    - Profile Object:
-     * `usesScenario`: Name of the target sharedScenario (string)
-     * `data`: Key-value map of variable names matching `${data:fieldName}` in scenarios
-     * `verifications`: List of inline `StepIntent` objects for profile-specific teardown/checks (optional)
+     * `usesScenario`: Name of the target sharedScenario (optional in the current schema; required when using `executeProfile`)
+     * `data`: Key-value map of parameters matching `${data:fieldName}` references (optional)
+   - Although `verifications` is accepted by the profile schema, `CommandDispatcher.executeProfile()` does not execute it. Put required assertions in scenario steps.
 
-3. PLAYWRIGHT SPEC RULES (TypeScript):
+4. PLAYWRIGHT SPEC RULES (TypeScript):
    - All generated test methods MUST be placed inside a single `test.describe` block named after the page module.
    - Imports required:
      * `test` from '@playwright/test'
-     * `CommandDispatcher` from engine path
-     * `loadSuiteYaml` from utils path
-     * `getBaseUrl` from envResolver path (`../../framework/utils/envResolver`)
-   - Suite loading (`loadSuiteYaml`) MUST occur strictly within a `test.beforeAll` hook.
-   - Dynamic environment navigation (`await page.goto(getBaseUrl())`) MUST occur strictly within a `test.beforeEach` hook. Never hardcode static URLs inside `page.goto()`.
-
-   Example Test Method Spec File:
-   import { test } from '@playwright/test';
-   import { CommandDispatcher } from '../../src/engine/commandDispatcher';
-   import { loadSuiteYaml } from '../../src/engine/yamlLoader';
-   import { getBaseUrl } from '../../src/utils/envResolver';
-
-   test.describe('McGraw Hill Student Authentication', () => {
-     let suite: any;
-
-     test.beforeAll(() => {
-       suite = loadSuiteYaml('tests/suites/mheLoginSuite.yaml');
-     });
-
-     test.beforeEach(async ({ page }) => {
-       await page.goto(getBaseUrl());
-     });
-
-     test('TC_LOGIN_001: Verify Valid Student Credentials Submit Successfully', async ({ page }) => {
-       const dispatcher = await CommandDispatcher.fromSuite(suite);
-       await dispatcher.executeProfile(page, 'validStudentLoginProfile', suite);
-     });
-   });
+     * `CommandDispatcher` from `'../../src/engine/commandDispatcher'`
+     * `loadYamlSuite` from `'../../src/engine/yamlLoader'`
+     * If present, `getBaseUrl` from `'../../src/utils/envResolver'`.
+   - The repository currently exports `loadYamlSuite`, not `loadSuiteYaml`.
+   - Load the YAML suite inside `test.beforeAll`; use a type-safe suite variable such as `ReturnType<typeof loadYamlSuite>` rather than `any`.
+   - The repository does not currently contain `src/utils/envResolver.ts`. Do not emit an unresolved import or invent a base URL. If the helper is a required project convention, stop and report that prerequisite; otherwise use the project's configured `baseURL` (for example, `page.goto('/')` when Playwright `use.baseURL` is configured).
+   - Navigate in `test.beforeEach`. Never hardcode a static URL in `page.goto()`.
 
 --------------------------------------------------------------------------------
 GENERATION INSTRUCTION & WORKFLOW
 --------------------------------------------------------------------------------
 1. ANALYZE DOM & TEST CASE:
    - Identify the minimum necessary interactive elements needed for the test case.
-   - Select resilient semantic locators (Role > Label > Placeholder > Text > CSS).
+   - Select resilient semantic locators (Role > Label > Placeholder > Text > CSS). Do not infer an accessible role or name that is absent from the DOM.
+   - Inspect the repository's existing module and folder naming before choosing output paths; preserve exact capitalization and established flat-path conventions.
 
 2. DELIVERABLE 1 — UI MAP (TypeScript):
-   - Location: `src/registries/[ModuleName]UiMap.ts`
-   - If an existing UI Map was provided, append ONLY missing `fieldKey` entries without altering existing keys.
+   - Location: `src/registries/[ModuleName]UiMap.ts` unless an existing module uses a subfolder.
+   - If an existing UI Map was provided, append ONLY missing `fieldKey` entries without changing existing entries.
 
-3. DELIVERABLE 2 — YAML SUITE (YAML):
-   - Location: `tests/suites/[ModuleName]Suite.yaml`
+3. DELIVERABLE 2 — UI MAP REGISTRY UPDATE (TypeScript):
+   - Update: `src/registries/UiMapIndex.ts`
+   - Add the named import and dictionary entry only for a new, unregistered map. Preserve all unrelated content.
+
+4. DELIVERABLE 3 — YAML SUITE (YAML):
+   - Location: `tests/suites/[ModuleName]Suite.yaml` unless an existing module uses a subfolder.
    - Use strictly 2-space indentation throughout.
    - Map profile dynamic variables using `${data:fieldName}` syntax.
+   - Ensure `uiMap` property points to the exact path string registered in `UiMapIndex.ts`.
 
-4. DELIVERABLE 3 — PLAYWRIGHT SPEC (TypeScript):
-   - Location: `tests/specs/[ModuleName].spec.ts`
+5. DELIVERABLE 4 — PLAYWRIGHT SPEC (TypeScript):
+   - Location: `tests/specs/[ModuleName].spec.ts` unless an existing module uses a subfolder.
    - Include test blocks wrapped inside `test.describe` with `test.beforeAll` and `test.beforeEach` hooks.
 
 Negative Constraints (Strict Prohibition Rules)
 - No Inline Types: Never generate export interface or export type inside *UiMap.ts files.
-- No Hardcoded Navigation URLs: Do not output hardcoded web URLs in `page.goto()`. Always use `getBaseUrl()`.
+- No Hardcoded Navigation URLs: Do not output hardcoded web URLs in `page.goto()`. Use an existing `getBaseUrl()` helper when available; otherwise use the configured Playwright `baseURL`. If neither exists, report the missing prerequisite instead of inventing a URL.
 - No Non-Standard Whitespace: Sanitize all YAML outputs to pure ASCII whitespace (no zero-width characters).
 
 --------------------------------------------------------------------------------
 OUTPUT FORMATTING
 --------------------------------------------------------------------------------
-Provide the three complete, un-truncated file code blocks ready to save directly to disk.
+--------------------------------------------------------------------------------
+OUTPUT FORMATTING & AGENT WORKSPACE ACTIONS
+--------------------------------------------------------------------------------
+You have full workspace access. Do not just print code blocks in the chat. Instead, use your workspace file tools to:
+1. Create or update `src/registries/[ModuleName]UiMap.ts`.
+2. Update `src/registries/Moodle/UiMapIndex.ts` with the new static import and registry entry.
+3. Create or update `tests/suites/Moodle/[ModuleName]Suite.yaml`.
+4. Create or update `tests/specs/Moodle/[ModuleName].spec.ts`.
+Rule : "Check if a module subfolder (e.g., Moodle/) already exists or is requested. If so, place all generated artifacts (UiMap, Suite, and Spec) inside that corresponding module subfolder, maintaining exact folder casing and correct relative import paths."
+
+Present each proposed change as a diff/file write for the user to review and click "Allow" or "Accept". Do not modify global configuration files (like playwright.config.ts).

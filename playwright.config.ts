@@ -10,6 +10,7 @@ export default defineConfig({
     timeout: 10000,
   },
   use: {
+    baseURL: 'https://sandbox.moodledemo.net',
     headless: true,
     trace: 'on-first-retry',
 

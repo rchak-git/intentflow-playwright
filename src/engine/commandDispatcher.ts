@@ -9,6 +9,8 @@ import { ButtonControl } from '../controls/buttonControl';
 import { PageControl } from '../controls/pageControl';
 import { GenericControl } from '../controls/genericControl';
 import { BaseControl } from '../controls/baseControl';
+import { UI_MAP_REGISTRY } from '../registries/UiMapIndex';
+
 
 export class CommandDispatcher {
   private uiMap: Record<string, UiMapEntry>;
@@ -18,49 +20,33 @@ export class CommandDispatcher {
   }
 
   /**
-   * Factory method to dynamically load and merge UI Map(s) declared in Suite YAML header
-   */
+    * Factory method to dynamically load and merge UI Map(s) declared in Suite YAML header.
+    * Resolves paths relative to src/registries automatically without requiring a static registry.
+    */
   public static async fromSuite(suite: SuiteSpec): Promise<CommandDispatcher> {
     const mapPaths = Array.isArray(suite.uiMap)
       ? suite.uiMap
       : typeof suite.uiMap === 'string'
-      ? [suite.uiMap]
-      : Object.values(suite.uiMap);
+        ? [suite.uiMap]
+        : Object.values(suite.uiMap);
 
     let mergedUiMap: Record<string, UiMapEntry> = {};
 
     for (const mapPath of mapPaths) {
-      const cleanPath = mapPath.replace(/^src\//, '');
-      const fullPath = path.resolve(process.cwd(), 'src', cleanPath);
-
-      const uiMapModule = await import(fullPath);
-
-      // Extract named exported object directly (ignoring system ESM keys like __esModule or default)
-      let resolvedMap: Record<string, UiMapEntry> | undefined;
-
-      for (const exportKey of Object.keys(uiMapModule)) {
-        if (exportKey !== '__esModule' && exportKey !== 'default' && typeof uiMapModule[exportKey] === 'object') {
-          resolvedMap = uiMapModule[exportKey];
-          break;
-        }
+      const mapExport = UI_MAP_REGISTRY[mapPath];
+      if (!mapExport) {
+        throw new Error(
+          `UI Map path "${mapPath}" is not registered in src/registries/UiMapIndex.ts.`
+        );
       }
-
-      // Fallback: Check default export if named export was not found
-      if (!resolvedMap && uiMapModule.default) {
-        resolvedMap = uiMapModule.default;
-      }
-
-      if (resolvedMap) {
-        mergedUiMap = {
-          ...mergedUiMap,
-          ...resolvedMap,
-        };
-      }
+      mergedUiMap = {
+        ...mergedUiMap,
+        ...mapExport,
+      };
     }
 
     return new CommandDispatcher(mergedUiMap);
   }
-
   /**
    * Executes a named data profile directly from a SuiteSpec
    */
