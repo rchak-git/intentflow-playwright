@@ -1,0 +1,110 @@
+page: studentDashboardPage
+uiMap:
+  - "mheLoginUiMap"
+  - "studentDashboardUiMap"
+
+# ==============================================================================
+# PROFILES (Test Cases with specific datasets)
+# ==============================================================================
+profiles:
+  # Profile 1: Positive Course Search & Card Verification
+  validCourseSearchProfile:
+    refScenario: verifyCourseCardDetailsScenario
+    data:
+      courseName: "Theme_MHUBlue"
+      teacherBadgeText: "0 Teachers"
+      studentBadgeText: "1 Student"
+
+  # Profile 2: Assign User & Verify Persistence
+  assignAndVerifyUserProfile:
+    refScenario: assignAndVerifyUserScenario
+    data:
+      courseName: "Theme_MHUBlue"
+      targetUser: "test10 test10"
+      selectColumn: "Select"
+      statusColumn: "Status"
+      initialStatus: "Unassigned"
+      updatedStatus: "Assigned"
+
+# ==============================================================================
+# SHARED SCENARIOS (Atomic & Composable)
+# ==============================================================================
+sharedScenarios:
+  # Atomic Step 1: Base Login and Course Search
+  carryOutCourseSearchScenario:
+    testName: "Atomic - Login and Search Course"
+    steps:
+      - intent: include
+        scenario: studentLoginFlow
+        data:
+          usernameInput: "admin_one"
+          passwordInput: "P@ssw0rd"
+
+      - intent: populate
+        fieldKey: courseSearchInput
+        value: "${data:courseName}"
+        params:
+          pressEnter: true
+
+  # Composite Scenario 1: Search Course + Verify Card Badges
+  verifyCourseCardDetailsScenario:
+    testName: "TC_SEARCH_001 - Valid search and course card verification"
+    steps:
+      - intent: include
+        scenario: carryOutCourseSearchScenario
+
+      - intent: verify
+        fieldKey: teacherCountBadge
+        assertion: CONTAIN_TEXT
+        value: "${data:teacherBadgeText}"
+
+      - intent: verify
+        fieldKey: studentCountBadge
+        assertion: CONTAIN_TEXT
+        value: "${data:studentBadgeText}"
+
+  # Composite Scenario 2: Search Course + Manage Users Web Table Flow
+  assignAndVerifyUserScenario:
+    testName: "TC_MANAGE_USERS_001 - Assign student and verify persistence"
+    steps:
+      - intent: include
+        scenario: carryOutCourseSearchScenario
+
+      # 1. Open Manage Users Modal
+      - intent: click
+        fieldKey: manageUsersBtn
+
+      # 2. Verify Initial Unassigned Status
+      - intent: verify
+        fieldKey: assignUsersTable
+        assertion: CONTAIN_TEXT
+        value: "${data:initialStatus}"
+        params:
+          rowByText: "${data:targetUser}"
+          columnHeader: "${data:statusColumn}"
+
+      # 3. Check User
+      - intent: action
+        fieldKey: assignUsersTable
+        params:
+          rowByText: "${data:targetUser}"
+          columnHeader: "${data:selectColumn}"
+          subSelector: "mat-checkbox"
+          actionType: "check"
+
+      # 4. Save Changes
+      - intent: click
+        fieldKey: updateUsersBtn
+
+      # 5. Re-open Modal
+      - intent: click
+        fieldKey: manageUsersBtn
+
+      # 6. Verify Persisted Status
+      - intent: verify
+        fieldKey: assignUsersTable
+        assertion: CONTAIN_TEXT
+        value: "${data:updatedStatus}"
+        params:
+          rowByText: "${data:targetUser}"
+          columnHeader: "${data:statusColumn}"

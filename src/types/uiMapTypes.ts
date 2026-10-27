@@ -1,19 +1,20 @@
 // src/types/uiMapTypes.ts
 
-export type WidgetType = 
-  | 'TEXTBOX' 
-  | 'BUTTON' 
-  | 'CHECKBOX' 
-  | 'DROPDOWN' 
-  | 'LABEL' 
-  | 'LINK' 
-  | 'CONTAINER' 
-  | 'REGION' 
-  | 'DUAL_LISTBOX' 
-  | 'GENERIC'
-  | 'WEB_TABLE'
-  | 'SEARCH'        // <-- Added
-  | 'COURSE_CARD';
+export const WIDGET_TYPES = [
+  'TEXTBOX',
+  'BUTTON',
+  'CHECKBOX',
+  'SELECT',
+  'LABEL',
+  'LINK',
+  'CONTAINER',
+  'WEB_TABLE',
+  'SEARCH',
+  'PAGE',
+  'GENERIC',
+] as const;
+
+export type WidgetType = typeof WIDGET_TYPES[number];
 
 // Semantic locator strategy definitions
 export type SemanticLocatorStrategy =
@@ -46,13 +47,25 @@ export type SemanticLocatorStrategy =
 
 export type LocatorDefinition = string | SemanticLocatorStrategy;
 
+export interface ColumnDefinition {
+  index: number;
+  controlType?: 'TEXT' | 'TEXTBOX' | 'CHECKBOX' | 'SELECT' | 'BUTTON';
+  subSelector?: string;
+}
+
 // A UiMapEntry can be EITHER a direct semantic entry (no 'main' required) 
 // OR a complex multi-locator entry (using 'main', 'row', 'cell', etc.)
-export type UiMapEntry =
-  | ({ widgetType: WidgetType } & SemanticLocatorStrategy)
-  | {
-      widgetType: WidgetType;
-      main: LocatorDefinition;
-      alternate?: LocatorDefinition;
-      [key: string]: LocatorDefinition | undefined;
-    };
+// src/types/uiMapTypes.ts
+export interface UiMapEntry {
+  widgetType: WidgetType;
+  strategy?: string;
+  selector?: string;
+  text?: string;
+  exact?: boolean;
+  role?: string;
+  name?: string;
+
+  // Web Table Extensions
+  rowSelector?: string;
+  columns?: Record<string, number | ColumnDefinition>;
+}

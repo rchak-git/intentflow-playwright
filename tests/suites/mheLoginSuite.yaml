@@ -1,16 +1,22 @@
 page: MheLoginPage
 description: "McGraw Hill AUT Login scenarios and data profiles"
-uiMap: "src/registries/mheLoginUiMap.ts"
+uiMap:
+  - "mheLoginUiMap"
 
 sharedScenarios:
   studentLoginFlow:
     description: "Submit credentials and attempt authentication"
     steps:
+      - step: "User navigates to web site"
+        intent: navigate
+        value: "/delivery-player/#/login"
+        fieldKey: PAGE
+
       - step: "User enters username"
         fieldKey: usernameInput
         intent: populate
         value: "${data:usernameInput}"
-        storeAs: capturedUsername # <--- Step 1: Captures entered username into globalContextStore
+        storeAs: capturedUsername
 
       - step: "User enters password"
         fieldKey: passwordInput
@@ -49,6 +55,11 @@ sharedScenarios:
   missingPasswordErrorFlow:
     description: "Submit form with username only and verify submit button remains disabled"
     steps:
+      - step: "User navigates to web site"
+        intent: navigate
+        value: "/delivery-player/#/login"
+        fieldKey: PAGE
+
       - step: "User enters username"
         fieldKey: usernameInput
         intent: populate
@@ -62,6 +73,11 @@ sharedScenarios:
   verifyFormState:
     description: "Verify login form controls are visible"
     steps:
+      - step: "User navigates to web site"
+        intent: navigate
+        value: "/delivery-player/#/login"
+        fieldKey: PAGE
+
       - step: "Verify login container is visible"
         fieldKey: loginFormRegion
         intent: verify
@@ -74,22 +90,22 @@ sharedScenarios:
 
 profiles:
   validStudentLogin:
-    usesScenario: studentLoginFlow
+    refScenario: studentLoginFlow
     data:
       usernameInput: "admin_one"
       passwordInput: "P@ssw0rd"
 
   invalidStudentLogin:
-    usesScenario: invalidLoginErrorFlow
+    refScenario: invalidLoginErrorFlow
     data:
       usernameInput: "student_qaXYZ"
       passwordInput: "SecurePass2026!"
 
   missingPasswordLogin:
-    usesScenario: missingPasswordErrorFlow
+    refScenario: missingPasswordErrorFlow
     data:
-       usernameInput: "student_qa"
+      usernameInput: "student_qa"
 
   loginFormInitialCheck:
-    usesScenario: verifyFormState
+    refScenario: verifyFormState
     data: {}

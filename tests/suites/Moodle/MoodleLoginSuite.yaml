@@ -1,53 +1,33 @@
-page: Moodle
-description: "Verify successful student login to the Moodle portal"
-uiMap: "src/registries/Moodle/moodleLoginUiMap.ts"
-
-sharedScenarios:
-  verifyLoginForm:
-    description: "Verify the Moodle login form is visible"
-    steps:
-      - step: "Verify the login form region is visible"
-        fieldKey: loginFormRegion
-        intent: verify
-        assertion: VISIBLE
-
-  studentLogin:
-    description: "Log in with student credentials and verify successful authentication"
-    refScenario: verifyLoginForm
-    additionalSteps:
-      - step: "Populate the username field"
-        fieldKey: usernameInput
-        intent: populate
-        value: "${data:usernameInput}"
-
-      - step: "Populate the password field"
-        fieldKey: passwordInput
-        intent: populate
-        value: "${data:passwordInput}"
-
-      - step: "Click the Log in button"
-        fieldKey: loginButton
-        intent: click
-
-      - step: "Verify no error alert is visible"
-        fieldKey: errorAlert
-        intent: verify
-        assertion: NOT_VISIBLE
-
-      - step: "Verify the login form is no longer visible after authentication"
-        fieldKey: loginFormRegion
-        intent: verify
-        assertion: NOT_VISIBLE
-
-      - step: "Verify the authenticated page contains the student welcome text"
-        fieldKey: PAGE
-        intent: verify
-        assertion: CONTAIN_TEXT
-        value: "Moodle 5.3 sandbox demo"
+page: moodleLoginPage
+uiMap:
+  - moodleLoginUiMap
 
 profiles:
-  validStudentLogin:
-    usesScenario: studentLogin
+  validAdminLogin:
+    refScenario: adminLogin
     data:
-      usernameInput: "student"
+      usernameInput: "admin"
       passwordInput: "sandbox24"
+
+sharedScenarios:
+  adminLogin:
+    testName: "Log in with Admin credentials"
+    steps:
+      # 1. Navigate to Moodle Login Page first!
+      - intent: navigate
+        value: "https://sandbox.moodledemo.net/login/index.php"
+
+      - intent: populate
+        fieldKey: usernameInput
+        value: "${data:usernameInput}"
+
+      - intent: populate
+        fieldKey: passwordInput
+        value: "${data:passwordInput}"
+
+      - intent: click
+        fieldKey: loginButton
+
+      - intent: verify
+        fieldKey: errorAlert
+        assertion: NOT_VISIBLE

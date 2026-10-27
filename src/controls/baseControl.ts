@@ -3,22 +3,40 @@ import { expect } from '@playwright/test';
 import type { UiMapEntry } from '../types/uiMapTypes';
 import type { Assertion } from '../types/intentSchema';
 import { resolveUiEntryLocator } from '../engine/locatorFactory';
+import { ActionParams } from '../types/intentSchema';
+import { clear } from 'node:console';
 
 export abstract class BaseControl {
   protected page: Page;
   protected locator: Locator;
   protected uiEntry: UiMapEntry;
+  protected params?: ActionParams;
 
-  constructor(page: Page, uiEntry: UiMapEntry) {
+  constructor(page: Page, uiEntry: UiMapEntry, params?: ActionParams) {
     this.page = page;
     this.uiEntry = uiEntry;
-    this.locator = resolveUiEntryLocator(page, uiEntry);
+    this.params = params;
+    this.locator = resolveUiEntryLocator(page, uiEntry, undefined, params);
+  }
+
+  // Allows dynamic parameter updating prior to performing interactions
+  public setParams(params?: ActionParams): void {
+    if (params) {
+      this.params = params;
+      this.locator = resolveUiEntryLocator(this.page, this.uiEntry, undefined, params);
+    }
   }
 
   // Common click interaction inherited by all UI controls
-  public async click(): Promise<void> {
+  public async click(params?: ActionParams): Promise<void> {
+    if (params) {
+      this.setParams(params);
+    }
     await this.executeWithRetry(async () => {
-      await this.locator.click();
+      await this.locator.click({
+        force: params?.force,
+        timeout: params?.timeout,
+      });
     });
   }
 
@@ -29,11 +47,15 @@ export abstract class BaseControl {
 
   // Helper to fetch sub-locators for complex components
   public getSubLocator(key: string): Locator {
-    return resolveUiEntryLocator(this.page, this.uiEntry, key);
+    return resolveUiEntryLocator(this.page, this.uiEntry, key, this.params);
   }
 
   // Common verification logic inherited by all UI controls
-  public async verify(assertion?: Assertion, expectedValue?: string): Promise<void> {
+  public async verify(assertion?: Assertion, expectedValue?: string, params?: ActionParams): Promise<void> {
+    if (params) {
+      this.setParams(params);
+    }
+
     switch (assertion) {
       case 'VISIBLE':
         await expect(this.locator).toBeVisible();

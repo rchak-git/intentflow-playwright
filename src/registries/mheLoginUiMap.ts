@@ -3,7 +3,7 @@ import type { UiMapEntry } from '../types/uiMapTypes';
 
 export const mheLoginUiMap: Record<string, UiMapEntry> = {
   loginFormRegion: {
-    widgetType: 'REGION',
+    widgetType: 'CONTAINER',
     strategy: 'role',
     role: 'region',
     name: 'Login form'

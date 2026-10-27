@@ -1,0 +1,30 @@
+page: moodleHomePage
+includes:
+  - MoodleLoginSuite
+uiMap:
+  - moodleLoginUiMap
+  - moodleHomeUiMap
+
+profiles:
+  openCourseFromHome:
+    refScenario: clickCourseFromHome
+    data:
+      courseName: "My first course"
+
+sharedScenarios:
+  clickCourseFromHome:
+    testName: "Log in and navigate to course page via Home page"
+    steps:
+      # 1. Chain Upstream Login Profile
+      - intent: include
+        refProfile: validAdminLogin
+
+      # 2. Home Page Actions
+      - intent: verify
+        fieldKey: homeHeader
+        assertion: VISIBLE
+
+      - intent: click
+        fieldKey: courseLink
+        params:
+          text: "${data:courseName}"

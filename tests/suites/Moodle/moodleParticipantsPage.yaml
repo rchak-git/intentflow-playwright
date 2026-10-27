@@ -1,0 +1,23 @@
+page: moodleParticipantsPage
+includes:
+  - moodleCoursePage
+uiMap:
+  - moodleLoginUiMap
+  - moodleHomeUiMap
+  - moodleCourseUiMap
+  - moodleParticipantsUiMap
+
+profiles:
+  verifyParticipantsTableProfile:
+    refScenario: openParticipantsAndVerify
+
+sharedScenarios:
+  openParticipantsAndVerify:
+    testName: "Open Participants Tab and Verify WebTable Roster"
+    steps:
+      - intent: include
+        refProfile: navigateToParticipantsFromCourse
+
+      - intent: verify
+        fieldKey: participantsTable
+        assertion: VISIBLE

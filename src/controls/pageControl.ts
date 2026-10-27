@@ -1,10 +1,13 @@
 import { expect, Page } from '@playwright/test';
+import type { UiMapEntry } from '../types/uiMapTypes';
+import { unknown } from 'zod';
+import { BaseControl } from './baseControl';
+import type { Assertion, ActionParams } from '../types/intentSchema';
 
-export class PageControl {
-  private page: Page;
-
-  constructor(page: Page) {
-    this.page = page;
+export class PageControl extends BaseControl {
+ 
+constructor(page: Page, uiEntry: UiMapEntry, params?: ActionParams) {
+    super(page, uiEntry, params);
   }
 
   public async verifyPageLevel(assertion: string, expectedValue?: string): Promise<void> {
@@ -24,7 +27,15 @@ export class PageControl {
         }
         await expect(this.page).toHaveURL(expectedValue);
         break;
+      case 'TITLE_EQUALS':
+        if (!expectedValue) throw new Error('Assertion TITLE_EQUALS requires expected string value.');
+        await expect(this.page).toHaveTitle(expectedValue);
+        break;
 
+      case 'URL_CONTAINS':
+        if (!expectedValue) throw new Error('Assertion URL_CONTAINS requires expected string value.');
+        await expect(this.page).toHaveURL(new RegExp(expectedValue));
+        break;
       default:
         throw new Error(`Unsupported page-level assertion "${assertion}".`);
     }

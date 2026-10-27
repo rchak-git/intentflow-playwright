@@ -1,44 +1,51 @@
-// src/engine/locatorFactory.ts
 import type { Page, Locator } from '@playwright/test';
-import type { UiMapEntry, LocatorDefinition, SemanticLocatorStrategy } from '../types/uiMapTypes';
+import type { UiMapEntry } from '../types/uiMapTypes';
 
-export function resolveLocator(page: Page, def: LocatorDefinition): Locator {
-    if (typeof def === 'string') {
-        return page.locator(def);
+export function resolveUiEntryLocator(
+  page: Page,
+  uiEntry: UiMapEntry,
+  subKey?: string,
+  params?: Record<string, any>
+): Locator {
+  // 1. Resolve raw selector or text property
+  let selector = uiEntry.selector || uiEntry.text || uiEntry.name || '';
+
+  // Inject sub-key locator if applicable
+  if (subKey && uiEntry.columns && subKey in uiEntry.columns) {
+    const col = uiEntry.columns[subKey];
+    if (typeof col === 'object' && 'subSelector' in col && col.subSelector) {
+      selector = col.subSelector;
     }
+  }
 
-    switch (def.strategy) {
-        case 'role':
-            return page.getByRole(def.role, {
-                name: def.name,
-                exact: def.exact,
-            });
-        case 'label':
-            return page.getByLabel(def.text, {
-                exact: def.exact, // <-- Forward exact flag to Playwright
-            });
-        case 'text':
-            return page.getByText(def.text, {
-                exact: def.exact, // <-- Forward exact flag to Playwright
-            });
-        case 'placeholder':
-            return page.getByPlaceholder(def.text, {
-                exact: def.exact, // <-- Forward exact flag to Playwright
-            });
-        case 'css':
-            return page.locator(def.selector);
-        default:
-            throw new Error(`Unsupported locator strategy configuration.`);
-    }
-}
+  // 2. Inject dynamic parameters into template placeholders (e.g. {text}, {id})
+  if (params && typeof params === 'object') {
+    Object.entries(params).forEach(([key, val]) => {
+      if (typeof val === 'string' || typeof val === 'number') {
+        selector = selector.replace(new RegExp(`\\{${key}\\}`, 'g'), String(val));
+      }
+    });
+  }
 
-export function resolveUiEntryLocator(page: Page, entry: UiMapEntry, key: string = 'main'): Locator {
-    // Cast entry to a record so TypeScript allows dynamic string key lookup on union types
-    const record = entry as Record<string, unknown>;
+  // 3. Assemble locator based on strategy
+  switch (uiEntry.strategy) {
+    case 'label':
+      return page.getByLabel(selector, { exact: !!uiEntry.exact });
 
-    if (key in record && record[key] !== undefined) {
-        return resolveLocator(page, record[key] as LocatorDefinition);
-    }
+    case 'role':
+      return page.getByRole((uiEntry.role as any) || 'button', {
+        name: selector,
+        exact: !!uiEntry.exact,
+      });
 
-    return resolveLocator(page, entry as SemanticLocatorStrategy);
+    case 'text':
+      return page.getByText(selector, { exact: !!uiEntry.exact });
+
+    case 'xpath':
+      return page.locator(`xpath=${selector}`);
+
+    case 'css':
+    default:
+      return page.locator(selector);
+  }
 }

@@ -10,8 +10,8 @@ export default defineConfig({
     timeout: 10000,
   },
   use: {
-    baseURL: 'https://sandbox.moodledemo.net',
-    headless: true,
+    baseURL:   'https://mhufrostlor-qa.learningmate.com',                     //'https://sandbox.moodledemo.net',                             //'https://mhufrostlor-qa.learningmate.com',                       //'https://sandbox.moodledemo.net',
+    headless: false,
     trace: 'on-first-retry',
 
     // --- VISUAL ARTIFACT SETTINGS ---

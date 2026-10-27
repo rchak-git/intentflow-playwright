@@ -1,0 +1,21 @@
+page: moodleCoursePage
+includes:
+  - moodleHomePage
+uiMap:
+  - moodleLoginUiMap
+  - moodleHomeUiMap
+  - moodleCourseUiMap
+
+profiles:
+  navigateToParticipantsFromCourse:
+    refScenario: openParticipantsFromCourse
+
+sharedScenarios:
+  openParticipantsFromCourse:
+    testName: "Navigate to Course Page and Click Participants Tab"
+    steps:
+      - intent: include
+        refProfile: openCourseFromHome
+
+      - intent: click
+        fieldKey: participantsTab

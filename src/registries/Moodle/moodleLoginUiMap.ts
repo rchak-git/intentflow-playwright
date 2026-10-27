@@ -1,8 +1,8 @@
-import type { UiMapEntry } from '../../types/uiMapTypes';
+import { UiMapEntry } from '../../types/uiMapTypes';
 
 export const moodleLoginUiMap: Record<string, UiMapEntry> = {
   loginFormRegion: {
-    widgetType: 'REGION',
+    widgetType: 'CONTAINER',
     strategy: 'css',
     selector: 'form#login',
   },
@@ -29,5 +29,10 @@ export const moodleLoginUiMap: Record<string, UiMapEntry> = {
     widgetType: 'GENERIC',
     strategy: 'role',
     role: 'alert',
+  },
+  PAGE: {
+    widgetType: 'PAGE',
+    strategy: 'css',
+    selector: 'body',
   },
 };

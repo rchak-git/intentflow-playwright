@@ -104,6 +104,7 @@
         "intent": {
           "type": "string",
           "enum": [
+            "navigate",
             "populate",
             "click",
             "action",
@@ -197,6 +198,14 @@
         "scenario": {
           "type": "string",
           "description": "Target shared scenario key for include steps"
+        },
+        "profile": {
+          "type": "string",
+          "description": "Target data profile key for include steps"
+        },
+        "data": {
+          "type": "object",
+          "description": "Inline key-value dataset map for scenario inclusion"
         },
         "dataId": {
           "type": "string",
