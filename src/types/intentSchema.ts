@@ -1,3 +1,4 @@
+// src/types/intentSchema.ts
 import { z } from 'zod';
 
 export const INTENTS = [
@@ -34,7 +35,7 @@ export const IntentSchema = z.enum(INTENTS);
 export const ActionTypeSchema = z.enum(ACTION_TYPES);
 export const AssertionSchema = z.enum(ASSERTIONS);
 
-// Element-level action parameters schema for VS Code IntelliSense
+// Element-level action parameters schema for VS Code IntelliSense & Web Table support
 export const ActionParamsSchema = z
   .object({
     timeout: z.number().describe("Custom element wait or action timeout in milliseconds").optional(),
@@ -42,8 +43,25 @@ export const ActionParamsSchema = z
     selectOption: z.string().describe("Option text to click from autocomplete dropdown").optional(),
     subAction: z.enum(['clear', 'search']).describe("Control sub-action type").optional(),
     force: z.boolean().describe("Bypass Playwright actionability checks").optional(),
+    
+    // --- Standardized Component Parameters (Design Lock) ---
+    matchText: z.string().describe("Universal container anchor string (e.g., card title or row text)").optional(),
+    subTarget: z.string().describe("Key mapping to a child element selector defined in subSelectors").optional(),
+
+    // --- Web Table & Dynamic Action Parameters ---
+    rowByText: z.string().describe("Text value to locate the target row in a Web Table (Legacy alias for matchText)").optional(),
+    rowIndex: z.number().describe("Zero-based index for table row targeting").optional(),
+    columnHeader: z.string().describe("Column header name to identify target cell").optional(),
+    columnIndex: z.number().describe("Zero-based index for table column targeting").optional(),
+    column: z.union([z.string(), z.number()]).describe("Column index or header key").optional(),
+    subSelector: z.string().describe("Raw sub-selector string override").optional(),
   })
+  .refine(
+    (data: Record<string, any>) => !('rowMatch' in data),
+    { message: "Deprecated parameter 'rowMatch' detected in YAML. Please use 'matchText' (or 'rowByText') instead." }
+  )
   .passthrough(); // Allows custom control overrides
+
 
 export const StepIntentSchema = z
   .object({
@@ -82,7 +100,7 @@ export const StepIntentSchema = z
     assertion: AssertionSchema.describe("Verification state check").optional(),
     storeAs: z.string().describe("Dynamic context variable name to save value").optional(),
     
-    // --- Composition / Chaining Keys (CRITICAL FIX) ---
+    // --- Composition / Chaining Keys ---
     refProfile: z.string().describe("Reference to an included profile key").optional(),
     profile: z.string().describe("Alias reference to an included profile key").optional(),
     refScenario: z.string().describe("Target shared scenario key for include steps").optional(),
@@ -128,12 +146,14 @@ export const SuiteSpecSchema = z
   .object({
     page: z.string({ message: "'page' is required in suite header" }),
     description: z.string().optional(),
-    includes: z.array(z.string()).optional(), // Supports upstream file imports
-    uiMap: z.union([
-      z.string(),
-      z.array(z.string()),
-      z.record(z.string(), z.string()),
-    ]),
+    includes: z.array(z.string()).optional(),
+    uiMap: z
+      .union([
+        z.string(),
+        z.array(z.string()),
+        z.record(z.string(), z.string()),
+      ])
+      .optional(), // Optional for Global UI Map fallback
     sharedScenarios: z.record(z.string(), TestScenarioSchema).optional(),
     profiles: z.record(z.string(), TestDataProfileSchema).optional(),
   })

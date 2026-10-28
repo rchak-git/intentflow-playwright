@@ -14,7 +14,7 @@ test.describe('Moodle Sandbox - Home Page Operations', () => {
   test('TC_MOODLE_HOME_001 - Verify Home Page and Navigate to Course', async ({ page }) => {
     await page.goto('https://sandbox.moodledemo.net/login/index.php');
     await page.waitForLoadState('networkidle');
-    await dispatcher.executeProfile(page, 'navigateToCourseProfile', suiteSpec);
+    await dispatcher.executeProfile(page, 'openCourseFromHome', suiteSpec);
     debugger;
   });
 });

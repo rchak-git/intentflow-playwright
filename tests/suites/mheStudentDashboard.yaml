@@ -74,23 +74,22 @@ sharedScenarios:
       - intent: click
         fieldKey: manageUsersBtn
 
-      # 2. Verify Initial Unassigned Status
+      # 2. Verify Initial Unassigned Status in Table (Standardized matchText)
       - intent: verify
         fieldKey: assignUsersTable
         assertion: CONTAIN_TEXT
         value: "${data:initialStatus}"
         params:
-          rowByText: "${data:targetUser}"
+          matchText: "${data:targetUser}"
           columnHeader: "${data:statusColumn}"
 
-      # 3. Check User
-      - intent: action
+      # 3. Check User Checkbox (Canonical click + subTarget)
+      - intent: click
         fieldKey: assignUsersTable
+        subTarget: "selectCheckbox"
         params:
-          rowByText: "${data:targetUser}"
+          matchText: "${data:targetUser}"
           columnHeader: "${data:selectColumn}"
-          subSelector: "mat-checkbox"
-          actionType: "check"
 
       # 4. Save Changes
       - intent: click
@@ -100,11 +99,11 @@ sharedScenarios:
       - intent: click
         fieldKey: manageUsersBtn
 
-      # 6. Verify Persisted Status
+      # 6. Verify Persisted Status in Table (Standardized matchText)
       - intent: verify
         fieldKey: assignUsersTable
         assertion: CONTAIN_TEXT
         value: "${data:updatedStatus}"
         params:
-          rowByText: "${data:targetUser}"
+          matchText: "${data:targetUser}"
           columnHeader: "${data:statusColumn}"

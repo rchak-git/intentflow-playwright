@@ -1,9 +1,6 @@
 page: moodleHomePage
 includes:
   - MoodleLoginSuite
-uiMap:
-  - moodleLoginUiMap
-  - moodleHomeUiMap
 
 profiles:
   openCourseFromHome:
@@ -21,10 +18,10 @@ sharedScenarios:
 
       # 2. Home Page Actions
       - intent: verify
-        fieldKey: homeHeader
+        fieldKey: moodle_home_homeHeader
         assertion: VISIBLE
 
       - intent: click
-        fieldKey: courseLink
+        fieldKey: moodle_home_courseLink
         params:
           text: "${data:courseName}"

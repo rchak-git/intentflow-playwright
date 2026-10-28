@@ -8,18 +8,13 @@ test.describe('Moodle Sandbox - Authentication & Portability Test', () => {
   let suiteSpec: any;
 
   test.beforeAll(async () => {
-    // If your suite YAML was also moved into tests/suites/Moodle/
     suiteSpec = await loadYamlSuite('tests/suites/Moodle/moodleLoginSuite.yaml');
-    // Otherwise, if it's still in tests/suites/:
-    // suiteSpec = await loadYamlSuite('tests/suites/moodleLoginSuite.yaml');
-    
     dispatcher = await CommandDispatcher.fromSuite(suiteSpec);
   });
 
   test('TC_MOODLE_001 - Verify Student Login on Moodle Stack', async ({ page }) => {
-    await page.goto('https://sandbox.moodledemo.net/login/index.php');
-    await page.waitForLoadState('networkidle');
-    await dispatcher.executeProfile(page, 'validStudentLogin', suiteSpec);
-    console.log("Wait here");
+    // Navigation and field interaction are managed directly by the Intent Engine
+    await dispatcher.executeProfile(page, 'validAdminLogin', suiteSpec);
+    debugger;
   });
 });

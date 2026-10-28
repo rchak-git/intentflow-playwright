@@ -22,6 +22,7 @@ test.describe('McGraw Hill AUT - Login Suite', () => {
   test('Verify Invalid Password Login Error Flow', async ({ page }) => {
     const dispatcher = await CommandDispatcher.fromSuite(suite);
     await dispatcher.executeProfile(page, 'invalidStudentLogin', suite);
+    debugger;
   });
 
   test('TC_LOGIN_002: Verify validation error when submitting login form with missing password', async ({ page }) => {

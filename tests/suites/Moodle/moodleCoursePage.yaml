@@ -1,10 +1,6 @@
 page: moodleCoursePage
 includes:
   - moodleHomePage
-uiMap:
-  - moodleLoginUiMap
-  - moodleHomeUiMap
-  - moodleCourseUiMap
 
 profiles:
   navigateToParticipantsFromCourse:
@@ -18,4 +14,4 @@ sharedScenarios:
         refProfile: openCourseFromHome
 
       - intent: click
-        fieldKey: participantsTab
+        fieldKey: moodle_course_participantsTab

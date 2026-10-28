@@ -1,15 +1,31 @@
 page: moodleParticipantsPage
 includes:
   - moodleCoursePage
-uiMap:
-  - moodleLoginUiMap
-  - moodleHomeUiMap
-  - moodleCourseUiMap
-  - moodleParticipantsUiMap
 
 profiles:
   verifyParticipantsTableProfile:
     refScenario: openParticipantsAndVerify
+
+  verifySamStudentProfile:
+    refScenario: executeSamStudentVerification
+    data:
+      userName: "Sam Student"
+      email: "student@moodle.a"
+      role: "Student"
+      groups: "No groups"
+      status: "Active"
+
+  verifyTerriTeacherProfile:
+    refScenario: executeTerriTeacherVerification
+    data:
+      userName: "Terri Teacher"
+      email: "teacher@moodle.a"
+      role: "Teacher"
+      groups: "No groups"
+      status: "Active"
+
+  verifyFullRosterProfile:
+    refScenario: executeFullRosterVerification
 
 sharedScenarios:
   openParticipantsAndVerify:
@@ -19,5 +35,57 @@ sharedScenarios:
         refProfile: navigateToParticipantsFromCourse
 
       - intent: verify
-        fieldKey: participantsTable
+        fieldKey: moodle_participants_participantsTable
         assertion: VISIBLE
+
+  # Single User Executions (Navigates + Verifies)
+  executeSamStudentVerification:
+    testName: "Navigate and Verify Sam Student Data Integrity"
+    steps:
+      - intent: include
+        refScenario: openParticipantsAndVerify
+      - intent: verify
+        fieldKey: moodle_participants_participantsTable
+        params:
+          matchText: "${data:userName}"
+          columnHeader: "Email"
+        assertion: CONTAIN_TEXT
+        value: "${data:email}"
+
+  executeTerriTeacherVerification:
+    testName: "Navigate and Verify Terri Teacher Data Integrity"
+    steps:
+      - intent: include
+        refScenario: openParticipantsAndVerify
+      - intent: verify
+        fieldKey: moodle_participants_participantsTable
+        params:
+          matchText: "${data:userName}"
+          columnHeader: "Email"
+        assertion: CONTAIN_TEXT
+        value: "${data:email}"
+
+  # Full Roster Execution (Navigates ONCE, verifies both rows without re-logging in)
+  executeFullRosterVerification:
+    testName: "Navigate Once and Verify Full Roster Data Integrity"
+    steps:
+      - intent: include
+        refScenario: openParticipantsAndVerify
+
+      # Verify Sam Student
+      - intent: verify
+        fieldKey: moodle_participants_participantsTable
+        params:
+          matchText: "Sam Student"
+          columnHeader: "Email"
+        assertion: CONTAIN_TEXT
+        value: "student@moodle.a"
+
+      # Verify Terri Teacher
+      - intent: verify
+        fieldKey: moodle_participants_participantsTable
+        params:
+          matchText: "Terri Teacher"
+          columnHeader: "Email"
+        assertion: CONTAIN_TEXT
+        value: "teacher@moodle.a"

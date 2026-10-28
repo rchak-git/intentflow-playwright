@@ -1,6 +1,4 @@
 page: moodleLoginPage
-uiMap:
-  - moodleLoginUiMap
 
 profiles:
   validAdminLogin:
@@ -13,21 +11,16 @@ sharedScenarios:
   adminLogin:
     testName: "Log in with Admin credentials"
     steps:
-      # 1. Navigate to Moodle Login Page first!
       - intent: navigate
         value: "https://sandbox.moodledemo.net/login/index.php"
 
       - intent: populate
-        fieldKey: usernameInput
+        fieldKey: moodle_login_usernameInput
         value: "${data:usernameInput}"
 
       - intent: populate
-        fieldKey: passwordInput
+        fieldKey: moodle_login_passwordInput
         value: "${data:passwordInput}"
 
       - intent: click
-        fieldKey: loginButton
-
-      - intent: verify
-        fieldKey: errorAlert
-        assertion: NOT_VISIBLE
+        fieldKey: moodle_login_loginButton

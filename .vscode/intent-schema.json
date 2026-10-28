@@ -2,9 +2,7 @@
   "$schema": "http://json-schema.org/draft-07/schema#",
   "title": "IntentFlow Suite Specification Schema",
   "type": "object",
-  "required": [
-    "page"
-  ],
+  "required": ["page"],
   "properties": {
     "page": {
       "type": "string",
@@ -17,20 +15,14 @@
     "uiMap": {
       "description": "UI Map reference path or mapping object",
       "oneOf": [
-        {
-          "type": "string"
-        },
+        { "type": "string" },
         {
           "type": "array",
-          "items": {
-            "type": "string"
-          }
+          "items": { "type": "string" }
         },
         {
           "type": "object",
-          "additionalProperties": {
-            "type": "string"
-          }
+          "additionalProperties": { "type": "string" }
         }
       ]
     },
@@ -40,26 +32,16 @@
       "additionalProperties": {
         "type": "object",
         "properties": {
-          "testName": {
-            "type": "string"
-          },
-          "description": {
-            "type": "string"
-          },
-          "refScenario": {
-            "type": "string"
-          },
+          "testName": { "type": "string" },
+          "description": { "type": "string" },
+          "refScenario": { "type": "string" },
           "steps": {
             "type": "array",
-            "items": {
-              "$ref": "#/definitions/StepIntent"
-            }
+            "items": { "$ref": "#/definitions/StepIntent" }
           },
           "additionalSteps": {
             "type": "array",
-            "items": {
-              "$ref": "#/definitions/StepIntent"
-            }
+            "items": { "$ref": "#/definitions/StepIntent" }
           }
         }
       }
@@ -70,21 +52,14 @@
       "additionalProperties": {
         "type": "object",
         "properties": {
-          "usesScenario": {
-            "type": "string"
-          },
-          "scenarioFile": {
-            "type": "string"
-          },
+          "usesScenario": { "type": "string" },
+          "refScenario": { "type": "string" },
+          "scenarioFile": { "type": "string" },
           "verifications": {
             "type": "array",
-            "items": {
-              "$ref": "#/definitions/StepIntent"
-            }
+            "items": { "$ref": "#/definitions/StepIntent" }
           },
-          "data": {
-            "type": "object"
-          }
+          "data": { "type": "object" }
         }
       }
     }
@@ -141,6 +116,8 @@
             "DUAL_LISTBOX",
             "WEB_TABLE",
             "SEARCH",
+            "SEARCH_CONTROL",
+            "PAGE",
             "COURSE_CARD",
             "GENERIC"
           ],
@@ -152,24 +129,52 @@
         },
         "value": {
           "oneOf": [
-            {
-              "type": "string"
-            },
-            {
-              "type": "boolean"
-            },
+            { "type": "string" },
+            { "type": "boolean" },
             {
               "type": "array",
-              "items": {
-                "type": "string"
-              }
+              "items": { "type": "string" }
             }
           ],
           "description": "Input value or expected assertion value"
         },
         "params": {
           "type": "object",
-          "description": "Additional action parameters"
+          "description": "Additional action parameters",
+          "properties": {
+            "timeout": {
+              "type": "number",
+              "description": "Custom element wait or action timeout in ms"
+            },
+            "pressEnter": {
+              "type": "boolean",
+              "description": "Press 'Enter' key after populating value"
+            },
+            "selectOption": {
+              "type": "string",
+              "description": "Option text to click from autocomplete dropdown"
+            },
+            "subAction": {
+              "type": "string",
+              "enum": ["clear", "search"]
+            },
+            "force": {
+              "type": "boolean",
+              "description": "Bypass Playwright actionability checks"
+            },
+            "rowByText": {
+              "type": "string",
+              "description": "Text value to locate target row in a Web Table"
+            },
+            "columnHeader": {
+              "type": "string",
+              "description": "Column header name to identify target cell"
+            },
+            "column": {
+              "oneOf": [{ "type": "string" }, { "type": "number" }],
+              "description": "Column index or header key"
+            }
+          }
         },
         "handlerName": {
           "type": "string",
@@ -187,7 +192,8 @@
             "TEXT_EQUALS",
             "CONTAIN_TEXT",
             "ENABLED",
-            "DISABLED"
+            "DISABLED",
+            "EMPTY"
           ],
           "description": "Verification state check"
         },
@@ -195,13 +201,21 @@
           "type": "string",
           "description": "Dynamic context variable name to save value"
         },
-        "scenario": {
+        "refProfile": {
           "type": "string",
-          "description": "Target shared scenario key for include steps"
+          "description": "Reference to an included profile key"
         },
         "profile": {
           "type": "string",
-          "description": "Target data profile key for include steps"
+          "description": "Alias reference to an included profile key"
+        },
+        "refScenario": {
+          "type": "string",
+          "description": "Target shared scenario key for include steps"
+        },
+        "scenario": {
+          "type": "string",
+          "description": "Target shared scenario key for include steps"
         },
         "data": {
           "type": "object",
@@ -210,9 +224,12 @@
         "dataId": {
           "type": "string",
           "description": "Data profile record key"
+        },
+        "url": {
+          "type": "string",
+          "description": "Target page URL for navigate intent"
         }
-      },
-      "additionalProperties": false
+      }
     }
   }
 }

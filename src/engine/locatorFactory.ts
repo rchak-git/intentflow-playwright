@@ -1,5 +1,5 @@
 import type { Page, Locator } from '@playwright/test';
-import type { UiMapEntry } from '../types/uiMapTypes';
+import type { UiMapEntry,WebTableUiMapEntry} from '../types/uiMapTypes';
 
 export function resolveUiEntryLocator(
   page: Page,
@@ -8,15 +8,18 @@ export function resolveUiEntryLocator(
   params?: Record<string, any>
 ): Locator {
   // 1. Resolve raw selector or text property
-  let selector = uiEntry.selector || uiEntry.text || uiEntry.name || '';
+  const entryAsAny = uiEntry as Record<string, any>;
+  let selector = uiEntry.selector || entryAsAny.text || entryAsAny.name || '';
 
   // Inject sub-key locator if applicable
-  if (subKey && uiEntry.columns && subKey in uiEntry.columns) {
-    const col = uiEntry.columns[subKey];
-    if (typeof col === 'object' && 'subSelector' in col && col.subSelector) {
-      selector = col.subSelector;
-    }
+ const tableEntry = uiEntry as WebTableUiMapEntry;
+
+if (subKey && tableEntry.columns && subKey in tableEntry.columns) {
+  const col = tableEntry.columns[subKey];
+  if (typeof col === 'object' && 'subSelector' in col && col.subSelector) {
+    selector = col.subSelector;
   }
+}
 
   // 2. Inject dynamic parameters into template placeholders (e.g. {text}, {id})
   if (params && typeof params === 'object') {

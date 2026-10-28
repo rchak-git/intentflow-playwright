@@ -12,7 +12,8 @@ import { CheckboxControl } from '../controls/checkboxControl';
 import { TableControl } from '../controls/tableControl';
 import { SearchControl } from '../controls/searchControl';
 import { BaseControl } from '../controls/baseControl';
-import { UI_MAP_REGISTRY } from '../registries/UiMapIndex';
+import { UI_MAP_REGISTRY,GLOBAL_UI_MAP } from '../registries/UiMapIndex';
+
 
 export class CommandDispatcher {
   private uiMap: Record<string, UiMapEntry>;
@@ -28,35 +29,38 @@ export class CommandDispatcher {
    * Stores the loaded SuiteSpec instance on the dispatcher.
    */
   public static async fromSuite(suite: SuiteSpec): Promise<CommandDispatcher> {
-    const mapPaths = Array.isArray(suite.uiMap)
-      ? suite.uiMap
-      : typeof suite.uiMap === 'string'
-        ? [suite.uiMap]
-        : Object.values(suite.uiMap);
-
     let mergedUiMap: Record<string, UiMapEntry> = {};
 
-    for (const rawMapPath of mapPaths) {
-      if (!rawMapPath) continue;
+    const rawMapPaths = suite?.uiMap
+      ? Array.isArray(suite.uiMap)
+        ? suite.uiMap
+        : typeof suite.uiMap === 'string'
+          ? [suite.uiMap]
+          : Object.values(suite.uiMap)
+      : [];
 
-      // Extract key alias if full file path was passed accidentally (e.g. "src/registries/mheLoginUiMap.ts" -> "mheLoginUiMap")
-      const resolvedKey = rawMapPath.replace(/^.*[\\/]/, '').replace(/\.(ts|js|json)$/, '');
+    if (rawMapPaths.length > 0) {
+      // Backward Compatibility: Load explicitly specified maps
+      for (const rawMapPath of rawMapPaths) {
+        if (!rawMapPath) continue;
+        const resolvedKey = rawMapPath.replace(/^.*[\\/]/, '').replace(/\.(ts|js|json)$/, '');
+        const mapExport = UI_MAP_REGISTRY[rawMapPath] || UI_MAP_REGISTRY[resolvedKey];
 
-      const mapExport = UI_MAP_REGISTRY[rawMapPath] || UI_MAP_REGISTRY[resolvedKey];
-      if (!mapExport) {
-        throw new Error(
-          `[IntentFlow] UI Map path or key "${rawMapPath}" is not registered in src/registries/UiMapIndex.ts.`
-        );
+        if (!mapExport) {
+          throw new Error(
+            `[IntentFlow] UI Map path or key "${rawMapPath}" is not registered in src/registries/UiMapIndex.ts.`
+          );
+        }
+        mergedUiMap = { ...mergedUiMap, ...mapExport };
       }
-      mergedUiMap = {
-        ...mergedUiMap,
-        ...mapExport,
-      };
+    } else {
+      // Unified Global Lookup: Auto-bind the entire GLOBAL_UI_MAP
+      console.log(`[IntentFlow] No explicit 'uiMap' declared in YAML header. Using Unified Global UI Map.`);
+      mergedUiMap = { ...GLOBAL_UI_MAP };
     }
 
     return new CommandDispatcher(mergedUiMap, suite);
   }
-
   /**
    * Executes a named data profile directly from a SuiteSpec.
    */

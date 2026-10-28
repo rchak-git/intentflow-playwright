@@ -4,8 +4,9 @@ import { BaseControl } from './baseControl';
 import { UiMapEntry } from '../types/uiMapTypes';
 import { TABLE_STRATEGY_DEFAULTS, TableStrategyDefinition } from '../config/controlDefaults';
 import type { ActionParams } from '../types/intentSchema';
+import type { WebTableUiMapEntry } from '../types/uiMapTypes';
 
-export interface TableActionParams {
+export interface TableActionParams extends ActionParams {
   rowByText?: string;
   rowIndex?: number;
   columnHeader?: string;
@@ -24,7 +25,7 @@ export class TableControl extends BaseControl {
   }
 
   /**
-   * Targets a specific row by visible text or zero-based row index
+   * Targets a specific row by visible text (matchText / rowByText) or zero-based row index
    */
   public getRowLocator(rowByText?: string, rowIndex?: number): Locator {
     const tableRoot = this.locator;
@@ -43,33 +44,53 @@ export class TableControl extends BaseControl {
   }
 
   /**
-   * Targets a cell inside a row using column index or column mapping header
+   * Targets a cell inside a row using column index, column mapping header, or subTarget lookup
    */
   public getCellLocator(params: TableActionParams): Locator {
-    const rowLocator = this.getRowLocator(params.rowByText, params.rowIndex);
+    // Standardized matchText anchor (Design Lock) with legacy rowByText fallback
+    const targetText = params.matchText ?? params.rowByText;
+    const rowLocator = this.getRowLocator(targetText, params.rowIndex);
     const cellSelector = this.strategyConfig.cellSelector;
 
-   let colIdx = params.columnIndex ?? 0;
-  if (params.columnHeader && this.uiEntry.columns && params.columnHeader in this.uiEntry.columns) {
+    // Safely cast uiEntry to WebTableUiMapEntry to access `columns` and `subSelectors`
+    const tableEntry = this.uiEntry as WebTableUiMapEntry;
 
-  const colDef = this.uiEntry.columns[params.columnHeader];
-  colIdx = typeof colDef === 'number' ? colDef : colDef.index;
-      }
+    let colIdx = params.columnIndex ?? 0;
+    if (params.columnHeader && tableEntry.columns && params.columnHeader in tableEntry.columns) {
+      const colDef = tableEntry.columns[params.columnHeader];
+      colIdx = typeof colDef === 'number' ? colDef : colDef.index;
+    }
 
     const cellLocator = rowLocator.locator(cellSelector).nth(colIdx);
 
-    return params.subSelector ? cellLocator.locator(params.subSelector) : cellLocator;
+    // Resolve child element via subTarget (Design Lock) or legacy subSelector
+    const childKey = params.subTarget || params.subSelector;
+if (childKey) {
+  const subCss = tableEntry.subSelectors?.[childKey] || childKey;
+  return cellLocator.locator(subCss);
+}
+
+    return cellLocator;
   }
 
   /**
-   * Interacts with a specific cell or sub-control inside the cell
+   * Standardized click action (Design Lock)
+   */
+  public override async click(params?: TableActionParams): Promise<void> {
+    const targetParams = params || {};
+    const targetLocator = this.getCellLocator(targetParams);
+    await targetLocator.click();
+  }
+
+  /**
+   * Interacts with a specific cell or sub-control inside the cell (Preserved)
    */
   public async action(valueOrParams?: any, extraParams?: any): Promise<void> {
     const actualParams: TableActionParams = 
       typeof valueOrParams === 'object' && valueOrParams !== null ? valueOrParams : extraParams || {};
 
-    if (!actualParams.rowByText && actualParams.rowIndex === undefined) {
-      throw new Error('TableControl action requires params (e.g., rowByText, columnHeader, subSelector)');
+    if (!actualParams.matchText && !actualParams.rowByText && actualParams.rowIndex === undefined) {
+      throw new Error('TableControl action requires params (e.g., matchText, rowByText, columnHeader, subSelector/subTarget)');
     }
 
     const targetLocator = this.getCellLocator(actualParams);
@@ -77,7 +98,7 @@ export class TableControl extends BaseControl {
   }
 
   /**
-   * Verifies table cell attributes using canonical assertion keywords
+   * Verifies table cell attributes using canonical assertion keywords (Preserved)
    */
   public async verify(assertion: string = 'CONTAIN_TEXT', expectedValue?: any, params?: any): Promise<void> {
     const targetParams: TableActionParams | undefined = 
@@ -92,6 +113,7 @@ export class TableControl extends BaseControl {
         break;
 
       case 'CONTAIN_TEXT':
+        let tempValues = await targetLocator.locator('xpath=ancestor::tr').locator('td').allInnerTexts();
         await expect(targetLocator).toContainText(expectedStr);
         break;
 
