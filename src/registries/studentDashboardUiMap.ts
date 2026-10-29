@@ -58,5 +58,32 @@ export const studentDashboardUiMap: Record<string, UiMapEntry> = {
     widgetType: 'BUTTON',
     strategy: 'css',
     selector: '.modal-header button.close, button[aria-label="Close"]'
-  }
+  },
+
+ moodle_course_cardLink: {
+    widgetType: 'LINK',
+    strategy: 'css',
+    selector: 'a[href*="lti/ui"]:has(img[alt="Theme_MHUBlue"])',
+  },
+
+  // Assessments Tab (In 2nd Window)
+  moodle_coursePlayer_assessmentsTab: {
+    widgetType: 'LINK',
+    strategy: 'css',
+    selector: 'a[routerlink="/assessment"]',
+  },
+
+  // Assessments Data Table
+  moodle_assessments_dataTable: {
+    widgetType: 'WEB_TABLE',
+    strategy: 'css',
+    selector: 'table.assessment-data-table',
+  },
+
+  // Kebab / Action Menu Button
+  moodle_assessments_actionMenuButton: {
+    widgetType: 'BUTTON',
+    strategy: 'css',
+    selector: 'button.more-options-btn[aria-label="Action Menu"]',
+  },
 };

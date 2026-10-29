@@ -15,7 +15,13 @@ profiles:
       teacherBadgeText: "0 Teachers"
       studentBadgeText: "1 Student"
 
-  # Profile 2: Assign User & Verify Persistence
+  # Profile 2: Open Searched Course Card (Triggers 2nd Window)
+  openCoursePlayerProfile:
+    refScenario: openSearchedCourseCardScenario
+    data:
+      courseName: "Theme_MHUBlue"
+
+  # Profile 3: Assign User & Verify Persistence
   assignAndVerifyUserProfile:
     refScenario: assignAndVerifyUserScenario
     data:
@@ -45,6 +51,29 @@ sharedScenarios:
         value: "${data:courseName}"
         params:
           pressEnter: true
+
+  studentLoginFlow:
+    testName: "Atomic - Student Login Flow"
+    steps:
+      - intent: populate
+        fieldKey: usernameInput
+        value: "${data:usernameInput}"
+      - intent: populate
+        fieldKey: passwordInput
+        value: "${data:passwordInput}"
+      - intent: click
+        fieldKey: loginBtn
+
+  # Atomic Step 2: Search Course + Click Course Card (Opens 2nd Window)
+  openSearchedCourseCardScenario:
+    testName: "Atomic - Search Course and Click Course Card"
+    steps:
+      - intent: include
+        scenario: carryOutCourseSearchScenario
+
+      - intent: click
+        fieldKey: moodle_course_cardLink
+        widgetType: LINK
 
   # Composite Scenario 1: Search Course + Verify Card Badges
   verifyCourseCardDetailsScenario:

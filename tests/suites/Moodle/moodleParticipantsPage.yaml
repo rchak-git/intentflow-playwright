@@ -1,31 +1,8 @@
+# yaml-language-server: $schema=../../../.vscode/intent-schema.json
 page: moodleParticipantsPage
+description: Verify participant details and filtering in the moodle participants table
 includes:
   - moodleCoursePage
-
-profiles:
-  verifyParticipantsTableProfile:
-    refScenario: openParticipantsAndVerify
-
-  verifySamStudentProfile:
-    refScenario: executeSamStudentVerification
-    data:
-      userName: "Sam Student"
-      email: "student@moodle.a"
-      role: "Student"
-      groups: "No groups"
-      status: "Active"
-
-  verifyTerriTeacherProfile:
-    refScenario: executeTerriTeacherVerification
-    data:
-      userName: "Terri Teacher"
-      email: "teacher@moodle.a"
-      role: "Teacher"
-      groups: "No groups"
-      status: "Active"
-
-  verifyFullRosterProfile:
-    refScenario: executeFullRosterVerification
 
 sharedScenarios:
   openParticipantsAndVerify:
@@ -33,12 +10,50 @@ sharedScenarios:
     steps:
       - intent: include
         refProfile: navigateToParticipantsFromCourse
-
       - intent: verify
         fieldKey: moodle_participants_participantsTable
         assertion: VISIBLE
 
-  # Single User Executions (Navigates + Verifies)
+  verifyParticipantDataIntegrity:
+    testName: "Verify Participant Data Integrity"
+    description: "Verifies participant details in the participants web table"
+    steps:
+      - intent: include
+        scenario: openParticipantsAndVerify
+      - step: "Inspect participants table"
+        fieldKey: moodle_participants_participantsTable
+        intent: verify
+        assertion: VISIBLE
+      - step: "Verify participant email address in the table"
+        fieldKey: moodle_participants_participantsTable
+        intent: verify
+        assertion: CONTAIN_TEXT
+        value: "${data:email}"
+        params:
+          rowByText: "${data:userName}"
+          columnHeader: "Email"
+
+  filterParticipantsTableByKeywordSearch:
+    testName: "Filter Participants Table by Keyword Search"
+    steps:
+      - step: "Given the user opens the participants page"
+        intent: include
+        scenario: openParticipantsAndVerify
+      - step: 'When the user searches for "Terri Teacher" in the participant filter input'
+        intent: populate
+        fieldKey: moodle_participants_filterInput
+        value: "${data:searchTerm}"
+        params:
+          pressEnter: true
+      - step: 'Then the user "Terri Teacher" should have email "teacher@moodle.a" in the table'
+        intent: verify
+        fieldKey: moodle_participants_participantsTable
+        assertion: CONTAIN_TEXT
+        value: "${data:email}"
+        params:
+          rowByText: "${data:userName}"
+          columnHeader: "Email"
+
   executeSamStudentVerification:
     testName: "Navigate and Verify Sam Student Data Integrity"
     steps:
@@ -65,14 +80,11 @@ sharedScenarios:
         assertion: CONTAIN_TEXT
         value: "${data:email}"
 
-  # Full Roster Execution (Navigates ONCE, verifies both rows without re-logging in)
   executeFullRosterVerification:
     testName: "Navigate Once and Verify Full Roster Data Integrity"
     steps:
       - intent: include
         refScenario: openParticipantsAndVerify
-
-      # Verify Sam Student
       - intent: verify
         fieldKey: moodle_participants_participantsTable
         params:
@@ -80,8 +92,6 @@ sharedScenarios:
           columnHeader: "Email"
         assertion: CONTAIN_TEXT
         value: "student@moodle.a"
-
-      # Verify Terri Teacher
       - intent: verify
         fieldKey: moodle_participants_participantsTable
         params:
@@ -89,3 +99,41 @@ sharedScenarios:
           columnHeader: "Email"
         assertion: CONTAIN_TEXT
         value: "teacher@moodle.a"
+
+profiles:
+  verifyParticipantsTableProfile:
+    refScenario: openParticipantsAndVerify
+
+  verifySamStudentIntegrityProfile:
+    refScenario: verifyParticipantDataIntegrity
+    data:
+      userName: "Sam Student"
+      email: "student@moodle.a"
+
+  verifySamStudentProfile:
+    refScenario: executeSamStudentVerification
+    data:
+      userName: "Sam Student"
+      email: "student@moodle.a"
+      role: "Student"
+      groups: "No groups"
+      status: "Active"
+
+  verifyTerriTeacherProfile:
+    refScenario: executeTerriTeacherVerification
+    data:
+      userName: "Terri Teacher"
+      email: "teacher@moodle.a"
+      role: "Teacher"
+      groups: "No groups"
+      status: "Active"
+
+  filterParticipantsTableByKeywordSearch:
+    refScenario: filterParticipantsTableByKeywordSearch
+    data:
+      searchTerm: "Terri Teacher"
+      userName: "Terri Teacher"
+      email: "teacher@moodle.a"
+
+  verifyFullRosterProfile:
+    refScenario: executeFullRosterVerification

@@ -1,0 +1,41 @@
+# yaml-language-server: $schema=../../../.vscode/intent-schema.json
+page: studentDashboardUiMap
+description: Navigate to course player window and verify assessment row details
+
+sharedScenarios:
+  openCoursePlayerAndNavigateToAssessments:
+    testName: "Open Course Player Window and Navigate to Assessments Tab"
+    steps:
+      - step: "Click course card link"
+        fieldKey: moodle_course_cardLink
+        intent: click
+        widgetType: LINK
+      - step: "Click Assessments tab"
+        fieldKey: moodle_coursePlayer_assessmentsTab
+        intent: click
+        widgetType: LINK
+
+  verifyAssessmentDataAndOpenMenu:
+    testName: "Verify Assessment Row Data and Trigger Action Menu"
+    steps:
+      - intent: include
+        scenario: openCoursePlayerAndNavigateToAssessments
+      - step: "Verify assessment clone status"
+        fieldKey: moodle_assessments_dataTable
+        intent: verify
+        widgetType: WEB_TABLE
+        assertion: CONTAIN_TEXT
+        value: "Clone"
+        params:
+          rowByText: "assess 1"
+          columnHeader: "Status"
+      - step: "Click Kebab menu for assess 1"
+        fieldKey: moodle_assessments_actionMenuButton
+        intent: click
+        widgetType: BUTTON
+        params:
+          rowByText: "assess 1"
+
+profiles:
+  verifyAssessmentsTableProfile:
+    refScenario: verifyAssessmentDataAndOpenMenu

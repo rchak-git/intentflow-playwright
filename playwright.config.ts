@@ -2,7 +2,11 @@ import { defineConfig, devices } from '@playwright/test';
 
 export default defineConfig({
   testDir: './tests',
-  reporter: [['html'], ['list']],
+ reporter: [
+    ['list'],
+    ['html', { open: 'never', outputFolder: 'playwright-report' }],
+    ['json', { outputFile: 'test-results/execution-results.json' }]
+  ],
   timeout:30000,
 
   expect: {
@@ -12,15 +16,15 @@ export default defineConfig({
   use: {
     baseURL:   'https://mhufrostlor-qa.learningmate.com',                     //'https://sandbox.moodledemo.net',                             //'https://mhufrostlor-qa.learningmate.com',                       //'https://sandbox.moodledemo.net',
     headless: false,
-    trace: 'on-first-retry',
+    trace:  'retain-on-failure',         //'on-first-retry',
 
     // --- VISUAL ARTIFACT SETTINGS ---
 
     // Options: 'off' | 'on' | 'retain-on-failure' | 'on-first-retry'
-    video: 'on', // Records a WebM video for every test run
+    video: 'retain-on-failure', // Records a WebM video for every test run
 
     // Options: 'off' | 'on' | 'only-on-failure'
-    screenshot: 'on', // Captures a scr
+    screenshot: 'only-on-failure', // Captures a scr
     actionTimeout: 15000,
     navigationTimeout: 60000,
   },
