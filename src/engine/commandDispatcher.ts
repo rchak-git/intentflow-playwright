@@ -20,6 +20,7 @@ import { UI_MAP_REGISTRY, GLOBAL_UI_MAP } from '../registries/UiMapIndex';
 import { SelectControl } from '../controls/selectControl';
 import { CustomSelectControl } from '../controls/customSelectControl';
 import { RadioGroupControl } from '../controls/RadioGroupControl';
+import { CardControl } from '../controls/CardControl';
 
 export class CommandDispatcher {
   private uiMap: Record<string, UiMapEntry>;
@@ -445,6 +446,9 @@ export class CommandDispatcher {
 
       case 'PAGE':
         return new PageControl(page, uiEntry, params);
+
+        case 'CARD':
+        return new CardControl(page, uiEntry, params);
 
       case 'CONTAINER':
       case 'LABEL':

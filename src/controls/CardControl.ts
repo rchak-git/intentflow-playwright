@@ -7,17 +7,22 @@ export class CardControl extends BaseControl {
   /**
    * Resolves the target card container and optional child sub-control locator.
    */
-  private getCardLocator(params?: StepParams): Locator {
+private getCardLocator(params?: StepParams): Locator {
     const anchorText = params?.anchorText || this.params?.anchorText;
     const childWidget = params?.childWidget || this.params?.childWidget;
 
-    // 1. Anchor to the specific card container on the page using anchorText
-    let cardContainer = this.locator;
+    // 1. Always resolve the root card container from uiEntry.selector
+    // (avoids BaseControl pre-resolving this.locator to the childWidget subSelector)
+    let cardContainer =
+      'selector' in this.uiEntry && this.uiEntry.selector
+        ? this.page.locator(this.uiEntry.selector)
+        : this.locator;
+
     if (anchorText) {
       cardContainer = cardContainer.filter({ hasText: anchorText });
     }
 
-    // 2. If a childWidget key is passed and subSelectors exist, locate inside anchored container
+    // 2. Locate childWidget inside the anchored card container
     if (childWidget && 'subSelectors' in this.uiEntry && this.uiEntry.subSelectors?.[childWidget]) {
       return cardContainer.locator(this.uiEntry.subSelectors[childWidget]);
     }
@@ -26,27 +31,23 @@ export class CardControl extends BaseControl {
     return cardContainer;
   }
 
-  public override async action(params?: StepParams): Promise<void> {
+ public override async action(params?: StepParams): Promise<void> {
     if (params) this.setParams(params);
     const targetParams = params || this.params;
-    const subIntent: SubIntent = targetParams?.subIntent || 'click';
-    const targetLocator = this.getCardLocator(targetParams);
+    const rawSubIntent: SubIntent = targetParams?.subIntent || 'click';
 
-    await this.executeWithRetry(async () => {
-      switch (subIntent) {
-        case 'hover':
-          await targetLocator.hover({ force: targetParams?.force, timeout: targetParams?.timeout });
-          break;
+    // Normalize 'clickSubControl' to 'click' so BaseControl handles click, jsClick, hover, etc. uniformly
+    const normalizedSubIntent: SubIntent =
+      rawSubIntent === 'clickSubControl' ? 'click' : rawSubIntent;
 
-        case 'clickSubControl':
-        case 'click':
-        default:
-          await targetLocator.click({ force: targetParams?.force, timeout: targetParams?.timeout });
-          break;
-      }
-    });
+    const originalLocator = this.locator;
+    try {
+      this.locator = this.getCardLocator(targetParams);
+      await super.action({ ...targetParams, subIntent: normalizedSubIntent });
+    } finally {
+      this.locator = originalLocator;
+    }
   }
-
   public override async verify(
     subIntent: SubIntent = 'contains',
     expectedValue?: Scalar | Scalar[],
@@ -61,11 +62,17 @@ export class CardControl extends BaseControl {
 
     switch (targetSubIntent) {
       case 'state': {
-        const isVisible = BooleanStateSchema.parse(rawVal ?? true);
-        if (isVisible) {
+        const stateStr = String(rawVal ?? 'visible').toLowerCase();
+        if (stateStr === 'visible' || stateStr === 'true') {
           await expect(targetLocator).toBeVisible();
-        } else {
+        } else if (stateStr === 'hidden' || stateStr === 'false') {
           await expect(targetLocator).toBeHidden();
+        } else if (stateStr === 'enabled') {
+          await expect(targetLocator).toBeEnabled();
+        } else if (stateStr === 'disabled') {
+          await expect(targetLocator).toBeDisabled();
+        } else {
+          throw new Error(`[IntentFlow] Unsupported card state assertion: '${rawVal}'`);
         }
         break;
       }

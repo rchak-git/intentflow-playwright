@@ -1,65 +1,35 @@
 page: "/delivery-player/#/login"
-description: "Successfully log into MHE Delivery Player with valid credentials"
+description: "MHE Delivery Player Login Suite"
 uiMap: "MheLoginUiMap"
 
-sharedScenarios:
-  open_login_page:
-    testName: "Open MHE Login Page"
-    description: "Navigates to the MHE Delivery Player login screen"
+profiles:
+  td_successfulAdminLogin:
+    description: "Successfully log into MHE Delivery Player with valid credentials"
     steps:
       - step: "Navigate to MHE Login page"
         fieldKey: "page"
         intent: "action"
         params:
           subIntent: "navigate"
-
-  login_with_credentials:
-    testName: "Login with Credentials"
-    description: "Populates credentials and submits login form"
-    steps:
+          value: "/delivery-player/#/login"
       - step: "Enter username"
         fieldKey: "mhe_login_usernameTextbox"
         intent: "populate"
         params:
-          value: "${data:username}"
-
+          value: "${data:username || 'admin_one'}"
       - step: "Enter password"
         fieldKey: "mhe_login_passwordTextbox"
         intent: "populate"
         params:
-          value: "${data:password}"
-
+          value: "${data:password || 'P@ssw0rd'}"
       - step: "Click login button"
         fieldKey: "mhe_login_loginButton"
         intent: "action"
         params:
           subIntent: "click"
-
-  verify_home_redirection:
-    testName: "Verify Redirection to Home Page"
-    description: "Verifies URL contains target home path"
-    steps:
       - step: "Verify URL contains home path"
         fieldKey: "page"
         intent: "verify"
         params:
           subIntent: "urlContains"
-          value: "/delivery-player/#/login"
-
-  login:
-    testName: "Complete Login Workflow"
-    description: "Full end-to-end authentication flow"
-    steps:
-      - refScenario: "open_login_page"
-      - refScenario: "login_with_credentials"
-        data:
-          username: "${data:username}"
-          password: "${data:password}"
-      - refScenario: "verify_home_redirection"
-
-profiles:
-  default:
-    refScenario: "login"
-    data:
-      username: "admin_one"
-      password: "P@ssw0rd"
+          value: "${data:expectedUrlSubstring || '/delivery-player/#/login'}"

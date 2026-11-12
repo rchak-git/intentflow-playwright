@@ -1,56 +1,83 @@
-page: "/course/view.php"
-description: "Moodle Course page interactions and course-level navigation"
+page: "/my/courses.php"
+description: "Moodle Course Directory and Course Navigation Suite"
 uiMap: "MoodleCourseUiMap"
 
 includes:
+  - "moodleLoginSteps.yaml"
   - "moodleHomePageSteps.yaml"
 
 # ---------------------------------------------------------------------------
-# SHARED SCENARIOS (Reusable Multi-Interaction Mechanics — Prefix: execute*)
+# SHARED SCENARIOS (Parameterized mechanics referenced by >= 2 profiles)
 # ---------------------------------------------------------------------------
 sharedScenarios:
-  executeOpenCourse:
-    description: "Clicks a target course card specified by the calling profile"
+  openCourseCard:
+    description: "Anchors a course card by title and clicks its title link"
     steps:
-      - step: "Click specified course card link"
-        fieldKey: "${data:courseCardFieldKey}"
+      - step: 'Verify course card "${data:courseTitle}" is visible'
+        fieldKey: "moodle_course_card"
+        intent: "verify"
+        params:
+          subIntent: "state"
+          anchorText: "${data:courseTitle}"
+          value: "visible"
+
+      - step: "Click title link on course card"
+        fieldKey: "moodle_course_card"
         intent: "action"
         params:
           subIntent: "jsClick"
+          anchorText: "${data:courseTitle || 'My first course'}"
+          childWidget: "titleLink"
 
-  executeOpenCourseAndSelectTab:
-    description: "Opens course view page and selects a course navigation tab"
+# ---------------------------------------------------------------------------
+# PROFILES (Concrete Execution Targets — Prefix: td_*)
+# ---------------------------------------------------------------------------
+profiles:
+  td_openCourseFromCard:
+    description: "Verify course card metadata and open course via card title link"
+    preconditions:
+      - refProfile: "moodleLoginSteps.td_successfulStudentLogin"
+      - refProfile: "moodleHomePageSteps.td_navigateToMyCourses"
     steps:
-      - refScenario: "executeOpenCourse"
+      - step: "Verify course card category text is Miscellaneous"
+        fieldKey: "moodle_course_card"
+        intent: "verify"
+        params:
+          subIntent: "contains"
+          anchorText: "My first course"
+          childWidget: "categoryText"
+          value: "Miscellaneous"
 
-      - step: "Click course tab link"
-        fieldKey: "${data:targetTabFieldKey}"
+      - refScenario: "openCourseCard"
+        data:
+          courseTitle: "My first course"
+
+      - step: "Verify navigation to Course view page"
+        fieldKey: "page"
+        intent: "verify"
+        params:
+          subIntent: "urlContains"
+          value: "view.php"
+
+  td_navigateToCourseParticipants:
+    description: "Open a course from My Courses card and navigate to Participants tab"
+    preconditions:
+      - refProfile: "moodleLoginSteps.td_successfulStudentLogin"
+      - refProfile: "moodleHomePageSteps.td_navigateToMyCourses"
+    steps:
+      - refScenario: "openCourseCard"
+        data:
+          courseTitle: "My first course"
+
+      - step: "Click Participants tab on course navigation bar"
+        fieldKey: "moodle_course_participantsTab"
         intent: "action"
         params:
           subIntent: "click"
-          waitForNetwork: true
 
-# ---------------------------------------------------------------------------
-# PROFILES (Public Execution Targets & Explicit Precondition Stacking — Prefix: td_*)
-# ---------------------------------------------------------------------------
-profiles:
-  td_openMyFirstCourse:
-    description: "Execution profile: Opens 'My first course' card as a Student"
-    preconditions:
-      - refProfile: "moodleLoginSteps.td_successfulStudentLogin"
-      - refProfile: "moodleHomePageSteps.td_navigateToMyCourses"
-    steps:
-      - refScenario: "executeOpenCourse"
-        data:
-          courseCardFieldKey: "moodle_course_cardLink"
-
-  td_navigateToParticipants:
-    description: "Data-less transition profile: Navigates to Course Participants tab as a Student"
-    preconditions:
-      - refProfile: "moodleLoginSteps.td_successfulStudentLogin"
-      - refProfile: "moodleHomePageSteps.td_navigateToMyCourses"
-    steps:
-      - refScenario: "executeOpenCourseAndSelectTab"
-        data:
-          courseCardFieldKey: "moodle_course_cardLink"
-          targetTabFieldKey: "moodle_course_participantsTab"
+      - step: "Verify landing on Course Participants page"
+        fieldKey: "page"
+        intent: "verify"
+        params:
+          subIntent: "urlContains"
+          value: "user"

@@ -3,15 +3,17 @@ import { loadYamlSuite } from '../../../src/engine/yamlLoader';
 import { CommandDispatcher } from '../../../src/engine/commandDispatcher';
 
 test.describe('Moodle Course & Participants Suite', () => {
-  test('Authenticated user views course participants table', async ({ page }) => {
-    // 1. Load the course suite YAML (recursively resolves parent includes)
+  test('Authenticated user verifies and opens course card', async ({ page }) => {
     const suiteSpec = loadYamlSuite('tests/suites/Moodle/moodleCourseSteps.yaml');
-
-    // 2. Instantiate CommandDispatcher (merges MoodleHomePageUiMap & MoodleCourseUiMap)
     const dispatcher = await CommandDispatcher.fromSuite(suiteSpec);
 
-    // 3. Run target scenario profile
-    await dispatcher.executeProfile(page, 'td_navigateToParticipants', suiteSpec);
-    debugger;
+    await dispatcher.executeProfile(page, 'td_openCourseFromCard', suiteSpec);
+  });
+
+  test('Authenticated user views course participants table', async ({ page }) => {
+    const suiteSpec = loadYamlSuite('tests/suites/Moodle/moodleCourseSteps.yaml');
+    const dispatcher = await CommandDispatcher.fromSuite(suiteSpec);
+
+    await dispatcher.executeProfile(page, 'td_navigateToCourseParticipants', suiteSpec);
   });
 });

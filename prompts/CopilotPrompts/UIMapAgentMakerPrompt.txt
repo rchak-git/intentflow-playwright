@@ -1,0 +1,76 @@
+You are architecting a strictly LLM-agnostic, harness-portable AI Agent workflow for generating, updating, and registering TypeScript UI Maps in this Playwright IntentFlow repository.
+
+### Core Portability Requirement (Must Be Enforced Everywhere)
+- Everything you create MUST work identically in both GitHub Copilot (VS Code Agent Mode) and Claude (Claude Code / Claude Desktop / MCP) with zero vendor lock-in.
+- Do NOT use any Copilot-proprietary APIs, VS Code extension settings, or model-specific prompt syntax.
+- Use the open **`AGENTS.md`** standard at the repository root as the single source of truth (both GitHub Copilot and Claude Code natively read root `AGENTS.md`), and use the native `@AGENTS.md` import directive in `CLAUDE.md` rather than prose pointers.
+- Rely exclusively on standard Node/TypeScript CLI commands (`npx tsx`, `npx tsc --noEmit`) and the standard Playwright MCP server (`@playwright/mcp`).
+
+### Step 1: Read Live Workspace Contracts & References
+Before writing any files, inspect these workspace files to understand our exact types, registry structure, and control patterns:
+1. `prompts/uiMapGeneratorPrompt.txt` and `prompts/gherkintoUIMapPrompt.txt` (reference for existing conventions)
+2. `src/types/uiMapTypes.ts` (authoritative `UiMapEntry`, `WidgetType`, `LocatorStrategy`, `frameSelector`, `columns`, and `subSelectors` definitions)
+3. `src/types/intentSchema.ts` (authoritative `intent` and `subIntent` capabilities per widget)
+4. `src/registries/UiMapIndex.ts` (authoritative registry structure showing how `<AUT_Directory>/<fileName>.map.ts` files are imported, spread into `<AUT>_UI_MAP`, and registered in `UI_MAP_REGISTRY`)
+5. `src/controls/searchControl.ts` and `src/controls/cardControl.ts` (how composite controls consume `subSelectors` at runtime)
+
+### Step 2: Create the Portable Agent Files
+Create the following files in the repository:
+
+1. **`AGENTS.md`** (at the repository root) — The single source of truth for the UI Map Builder agent. Bake in ALL of these exact rules and workflows:
+
+   - **Dynamic Schema Reading (Zero Type Drift):**
+     - Always read `src/types/uiMapTypes.ts`, `src/types/intentSchema.ts`, and `src/registries/UiMapIndex.ts` directly from the workspace before generating or modifying any UI Map.
+     - Generate declarative TypeScript dictionary objects (`Record<string, UiMapEntry>`) ONLY — never generate classes, `(page) => ...` functions, async methods, or Page Object Models.
+     - Never output empty strings for optional properties (e.g., never output `text: ''`).
+
+   - **File Naming, Placement & Registry Synchronization (`UiMapIndex.ts`):**
+     - Place UI Map files under `src/registries/<AUT_Directory>/<camelCasePageName>.map.ts` (preserving exact directory casing, e.g., `src/registries/Moodle/`, `src/registries/Mhe/`, `src/registries/Angular/`, `src/registries/React/`).
+     - Export `export const <PascalCasePageName>UiMap: Record<string, UiMapEntry> = { ... }` with keys named `<page_prefix>_<description><WidgetType>` (e.g., `moodle_participants_searchInput` or `mhe_login_submitButton`).
+     - **Mandatory Registry Sync:** Inspect `src/registries/UiMapIndex.ts`. If `<PascalCasePageName>UiMap` is not yet registered, update `src/registries/UiMapIndex.ts` to:
+       1. Import `{ <PascalCasePageName>UiMap } from './<AUT_Directory>/<camelCasePageName>.map'`.
+       2. Spread `...<PascalCasePageName>UiMap` into the corresponding consolidated domain map (e.g., `MOODLE_UI_MAP`, `MHE_UI_MAP`).
+       3. Register BOTH `<PascalCasePageName>UiMap` and `<camelCasePageName>UiMap: <PascalCasePageName>UiMap as Record<string, UiMapEntry>` in `UI_MAP_REGISTRY`.
+
+   - **Reaching Authenticated / Deep Target Pages:**
+     - *Auto-Discovery First:* Search `tests/suites/**/*.yaml` for an existing profile or `refProfile` that navigates to the target page (matching by page name, URL, or domain keywords) so the tester does not have to supply a test path manually.
+     - *Session Capture:* Run `npx tsx src/cli/reachPage.ts --suite <discovered-yaml> --profile <discovered-profile>` to reach the target state, save `playwright/.auth/state.json`, and print `TARGET_URL=...`, then inspect the live page via Playwright MCP (`browser_navigate` -> `browser_snapshot`).
+     - *Fallback:* If no matching suite exists, check `.env` for base URL/credentials (never hardcode secrets) and navigate interactively via Playwright MCP, or ask the user if MFA/manual steps are required.
+
+   - **Main Flow (MF-1) — Scenario-Scoped Extraction:**
+     - Parse the provided User Story / manual test cases (Gherkin or plain steps) to extract ONLY the actionable UI controls exercised by the tests—never capture ambient noise (column sorting links, static page counters, decorative headers) unless explicitly requested.
+     - Infer `widgetType` and required `subSelectors` / `columns` from the test actions and assertions.
+
+   - **Alternate Flow 1 (AF-1) — Non-Destructive Delta Updates:**
+     - When updating an existing `.map.ts` file, **NEVER** rename, delete, or modify existing keys, strategies, selectors, `columns`, or existing `subSelectors` unless explicitly instructed to fix a broken locator.
+     - Deduplicate first: if an existing key already targets the requested DOM element, reuse and report it.
+     - Append only new delta keys (or newly required `subSelectors` / `columns` on an existing composite entry) and conclude with a diff summary: **Reused Keys**, **Added Delta Keys**, and **0 Existing Keys Modified**.
+
+   - **Alternate Flow 2 (AF-2) — Interactive State-Dependent Elements:**
+     - For modals, tabs, drawers, or portaled dropdowns (`[role="listbox"]`, `[role="dialog"]`, `.cdk-overlay-container`), trigger the UI state via Playwright MCP (`browser_click`, `browser_type`), capture a fresh `browser_snapshot`, and map the revealed controls.
+
+   - **Alternate Flow 3 (AF-3) — Exploratory Scaffolding:**
+     - If no test cases are provided, scan `<main>` (excluding global header/footer boilerplate) and annotate inferred `widgetType` entries with `// TODO: verify widgetType`.
+
+   - **Locator Strategy & `getByRole` Strict-Mode Rules:**
+     - **Upgrade from Legacy Static Prompt:** Because the agent inspects the live accessibility tree via Playwright MCP `browser_snapshot`, `strategy: 'role'` (`role` + `text`) IS allowed and preferred **when and only when** the `(role, name)` pair is strictly unique on the page.
+     - **Strict-Mode Guard:** If duplicate `(role, name)` matches exist on the page, forbid bare `strategy: 'role'` (to prevent Playwright strict-mode failures) and use `strategy: 'label'`, scoped `css` (`:has()`), or relative `xpath` anchored to a unique parent landmark/heading.
+     - **Reject Dynamic Framework IDs:** Never use auto-generated IDs or hashes (`#mat-select-45`, `_R_...`, `_ngcontent-*`, dynamic `css-*` hashes, random UUIDs).
+     - **Iframe Resolution (`frameSelector`):** Whenever a control or composite container sits inside an `<iframe>`, include `frameSelector: 'iframe[...]'` directly on the `UiMapEntry`.
+
+   - **Widget-Specific Structural Contracts:**
+     - **`RADIO_GROUP`:** Anchor to shared `name`, `<mat-radio-group>`, or `[role="radiogroup"]`; include `subSelectors: { option: 'mat-radio-button, .MuiRadio-root, [role="radio"]', label: '.mdc-label, label' }` (avoid bare `input[type="radio"]` for custom UI libraries).
+     - **`CUSTOM_SELECT` & `SEARCH`:** Prefer `strategy: 'label'` or scoped `css` (`:has()`). Define `subSelectors` (`overlayPanel` for body-portaled overlays like `.cdk-overlay-container` or `[role="listbox"]`, `option` / `optionItem`, and `clearBtn` where applicable).
+     - **`CARD` & `CONTAINER`:** Top-level `selector` MUST be a generic, un-parameterized container selector matching all instances (never hardcode `${anchorText}` or item text in the top-level `selector`); put relative child selectors inside `subSelectors`.
+     - **`WEB_TABLE`:** Use `widgetType: 'WEB_TABLE'` (never `'TABLE'`) with `selector` (table/grid root without text filters), `rowSelector` (e.g., `'div[role="row"], tbody tr'`), and 1-based `columns: { <colName>: { index: 1, controlType: 'LINK' | 'BUTTON' | 'SELECT' | 'TEXT', subSelector: '...' } }`. Map floating row action menus separately as `widgetType: 'MENU'`.
+
+   - **Exception Guardrails & Deterministic Verification:**
+     - Never hallucinate locators for missing or ambiguous elements; emit a clear warning in the final output instead.
+     - Always run `npx tsc --noEmit` after creating or updating any `.map.ts` file or `UiMapIndex.ts` and resolve all TypeScript errors before finishing.
+
+2. **`src/cli/reachPage.ts`** — A reusable CLI helper accepting `--suite <yamlPath>` and `--profile <profileName>` that runs the navigation profile via `loadYamlSuite` and `CommandDispatcher`, saves `playwright/.auth/state.json`, and prints `STATE_SAVED=...` and `TARGET_URL=...`.
+
+3. **`CLAUDE.md`** (at the repository root — preserve existing content if the file already exists) containing `@AGENTS.md` on line 1 so Claude Code imports the exact same instructions without duplication.
+
+### Step 3: Verify
+Run `npx tsc --noEmit` to confirm `src/cli/reachPage.ts` compiles cleanly with zero TypeScript errors, and summarize the created files.

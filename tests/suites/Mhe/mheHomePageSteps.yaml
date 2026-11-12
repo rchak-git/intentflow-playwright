@@ -1,54 +1,33 @@
-page: "user/index.php"
+page: "/user/index.php"
 description: "MHE Home Directory page course card search and navigation scenarios"
 uiMap: "MheHomePageUiMap"
+
 includes:
   - "mhe_LoginSteps.yaml"
 
-sharedScenarios:
-  searchCourseInDirectory:
-    testName: "Search Course In Directory"
-    description: "Populate search input with target course name"
+profiles:
+  td_searchAndOpenCourseDashboard:
+    description: "Search and navigate to course dashboard from Home Directory"
+    preconditions:
+      - refProfile: "mhe_LoginSteps.td_successfulAdminLogin"
     steps:
-      - step: 'the user searches for course "${data:courseName}"'
+      - step: 'Enter "${data:courseName}" into course search input'
         fieldKey: "mhe_hm_searchInput"
         intent: "populate"
         params:
-          value: "${data:courseName}"
+          value: "${data:courseName || 'Project Assignment flow'}"
 
-  openCourseCard:
-    testName: "Open Course Card"
-    description: "Click image link on targeted course card"
-    steps:
-      - step: 'the user opens the course card "${data:courseTitle}"'
+      - step: 'Click image link on course card "${data:courseName}"'
         fieldKey: "mhe_hm_courseCard"
         intent: "action"
         params:
           subIntent: "clickSubControl"
-          anchorText: "${data:courseTitle}"
+          anchorText: "${data:courseName || 'Project Assignment flow'}"
           childWidget: "imageLink"
 
-  searchAndOpenCourseDashboard:
-    testName: "Search and navigate to course dashboard from Home Directory"
-    description: "Search for a course, open its card, and verify navigation to dashboard"
-    steps:
-      - refProfile: "mhe_LoginSteps.yaml#default"
-      - refScenario: "searchCourseInDirectory"
-        data:
-          courseName: "${data:courseName}"
-      - refScenario: "openCourseCard"
-        data:
-          courseTitle: "${data:courseName}"
-      - step: 'Then the Course Dashboard page should be displayed for "${data:courseName}"'
+      - step: 'Verify Course Dashboard URL contains "${data:expectedUrlSnippet}"'
         fieldKey: "page"
         intent: "verify"
         params:
           subIntent: "urlContains"
-          value: "${data:expectedUrlSnippet}"
-
-profiles:
-  searchAndOpenCourseDashboardProfile:
-    refScenario: "searchAndOpenCourseDashboard"
-    description: "Search and navigate to course dashboard profile"
-    data:
-      courseName: "Project Assignment flow"
-      expectedUrlSnippet: "course/view.php"
+          value: "${data:expectedUrlSnippet || 'course/view.php'}"

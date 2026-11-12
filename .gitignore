@@ -6,3 +6,6 @@ playwright-report/
 blob-report/
 playwright/.cache/
 .env
+.env.*
+!.env.example
+.auth/

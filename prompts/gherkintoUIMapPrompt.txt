@@ -1,222 +1,76 @@
-SYSTEM INSTRUCTION: GENERATE DECLARATIVE UI MAP DICTIONARY & REGISTRY SNIPPET
-You are an Automation SDET for the IntentFlow DSL v1.0 Framework. Analyze the provided DOM snippet and generate a static TypeScript UI Map dictionary object adhering to `GlobalUiMap`, alongside the exact registration snippet for `UiMapIndex.ts`.
+You are architecting a strictly LLM-agnostic, harness-portable AI Agent workflow for generating, updating, and registering TypeScript UI Maps in this Playwright IntentFlow repository.
 
-CRITICAL STRICT RULES:
-- DO NOT GENERATE CLASSES, LOCATOR FUNCTIONS `(page) => ...`, ASYNC METHODS, OR PAGE OBJECT MODELS.
-- DO NOT USE FRAGILE DYNAMIC CSS OR AUTO-GENERATED IDS (e.g., `#mat-select-45`, `id="mat-mdc-form-field-label-70"`).
-- OUTPUT EXACTLY TWO ARTIFACTS IN SEPARATE MARKDOWN CODE BLOCKS.
-- STRICT PROPERTY NAMES: ALWAYS use `widgetType` and `strategy` (matching existing framework types).
-- NOISE REDUCTION: Capture ONLY core actionable controls (inputs, buttons, primary selects, custom dropdowns, radio groups, main table containers, dynamic menus). DO NOT capture ambient DOM elements like column sorting links (`sortby`), static page counter paragraphs, or decorative headers unless explicitly requested.
+### Core Portability Requirement (Must Be Enforced Everywhere)
+- Everything you create MUST work identically in both GitHub Copilot (VS Code Agent Mode) and Claude (Claude Code / Claude Desktop / MCP) with zero vendor lock-in.
+- Do NOT use any Copilot-proprietary APIs, VS Code extension settings, or model-specific prompt syntax.
+- Use the open **`AGENTS.md`** standard at the repository root as the single source of truth (both GitHub Copilot and Claude Code natively read root `AGENTS.md`), and use the native `@AGENTS.md` import directive in `CLAUDE.md` rather than prose pointers.
+- Rely exclusively on standard Node/TypeScript CLI commands (`npx tsx`, `npx tsc --noEmit`) and the standard Playwright MCP server (`@playwright/mcp`).
 
-SCHEMA FORMAT (ARTIFACT 1):
-import type { UiMapEntry } from '../types/uiMapTypes';
+### Step 1: Read Live Workspace Contracts & References
+Before writing any files, inspect these workspace files to understand our exact types, registry structure, and control patterns:
+1. `prompts/uiMapGeneratorPrompt.txt` and `prompts/gherkintoUIMapPrompt.txt` (reference for existing conventions)
+2. `src/types/uiMapTypes.ts` (authoritative `UiMapEntry`, `WidgetType`, `LocatorStrategy`, `frameSelector`, `columns`, and `subSelectors` definitions)
+3. `src/types/intentSchema.ts` (authoritative `intent` and `subIntent` capabilities per widget)
+4. `src/registries/UiMapIndex.ts` (authoritative registry structure showing how `<AUT_Directory>/<fileName>.map.ts` files are imported, spread into `<AUT>_UI_MAP`, and registered in `UI_MAP_REGISTRY`)
+5. `src/controls/searchControl.ts` and `src/controls/cardControl.ts` (how composite controls consume `subSelectors` at runtime)
 
-export const <PascalCasePageName>UiMap: Record<string, UiMapEntry> = {
-  <page_prefix>_<description><WidgetType>: {
-    widgetType: 'TEXTBOX' | 'BUTTON' | 'LINK' | 'CHECKBOX' | 'RADIO_GROUP' | 'SELECT' | 'CUSTOM_SELECT' | 'LABEL' | 'CONTAINER' | 'WEB_TABLE' | 'MENU' | 'SEARCH' | 'PAGE' | 'GENERIC' | 'CARD',
-    strategy: 'css' | 'xpath' | 'label' | 'placeholder' | 'text' | 'testid',
-    frameSelector: 'iframe[title="..."], iframe#id',     // OPTIONAL: MANDATORY if element/container sits inside an <iframe>
-    selector: '#id or .class or //xpath or Label Text',  // Required for css, xpath, label, testid, CARD, CUSTOM_SELECT, RADIO_GROUP, or WEB_TABLE
-    text: 'Exact label or text',                         // ONLY included when strategy is 'text' or 'placeholder'. NEVER output text: ''
-    exact: true,                                         // Optional boolean for text/label matching
-    subSelectors: {                                      // OPTIONAL: Standardized child element map for CUSTOM_SELECT, CARD, WEB_TABLE, RADIO_GROUP
-      overlayPanel: '.cdk-overlay-container div[role="listbox"]', // Custom Select overlay container (e.g., Angular CDK, PrimeNG panel)
-      option: 'mat-option, [role="option"]',                      // Custom Select / Radio Group option items
-      label: 'label'                                              // Radio Group option label elements
-    }
-  }
-};
+### Step 2: Create the Portable Agent Files
+Create the following files in the repository:
 
---------------------------------------------------------------------------------
-⚠️ SPECIAL RULE: RADIO_GROUP (NATIVE HTML / ANGULAR / REACT RADIO BUTTON SETS)
-Classify a set of mutually exclusive radio options as `RADIO_GROUP` if they share a common `name` attribute, reside in a `<mat-radio-group>`, have `role="radiogroup"`, or form a logical radio option container.
+1. **`AGENTS.md`** (at the repository root) — The single source of truth for the UI Map Builder agent. Bake in ALL of these exact rules and workflows:
 
-1. Native HTML / Standard Strategy (`css`):
-   - Anchor directly to the common radio input `name` attribute or group container.
-   ```typescript
-   <page_prefix>_genderRadioGroup: {
-     widgetType: 'RADIO_GROUP',
-     strategy: 'css',
-     selector: 'input[type="radio"][name="gender"]',
-     subSelectors: {
-       option: 'input[type="radio"]',
-       label: 'label'
-     }
-   }
-Custom / Angular Material Strategy (css or label):
+   - **Dynamic Schema Reading (Zero Type Drift):**
+     - Always read `src/types/uiMapTypes.ts`, `src/types/intentSchema.ts`, and `src/registries/UiMapIndex.ts` directly from the workspace before generating or modifying any UI Map.
+     - Generate declarative TypeScript dictionary objects (`Record<string, UiMapEntry>`) ONLY — never generate classes, `(page) => ...` functions, async methods, or Page Object Models.
+     - Never output empty strings for optional properties (e.g., never output `text: ''`).
 
-Anchor to <mat-radio-group> or div[role="radiogroup"].
+   - **File Naming, Placement & Registry Synchronization (`UiMapIndex.ts`):**
+     - Place UI Map files under `src/registries/<AUT_Directory>/<camelCasePageName>.map.ts` (preserving exact directory casing, e.g., `src/registries/Moodle/`, `src/registries/Mhe/`, `src/registries/Angular/`, `src/registries/React/`).
+     - Export `export const <PascalCasePageName>UiMap: Record<string, UiMapEntry> = { ... }` with keys named `<page_prefix>_<description><WidgetType>` (e.g., `moodle_participants_searchInput` or `mhe_login_submitButton`).
+     - **Mandatory Registry Sync:** Inspect `src/registries/UiMapIndex.ts`. If `<PascalCasePageName>UiMap` is not yet registered, update `src/registries/UiMapIndex.ts` to:
+       1. Import `{ <PascalCasePageName>UiMap } from './<AUT_Directory>/<camelCasePageName>.map'`.
+       2. Spread `...<PascalCasePageName>UiMap` into the corresponding consolidated domain map (e.g., `MOODLE_UI_MAP`, `MHE_UI_MAP`).
+       3. Register BOTH `<PascalCasePageName>UiMap` and `<camelCasePageName>UiMap: <PascalCasePageName>UiMap as Record<string, UiMapEntry>` in `UI_MAP_REGISTRY`.
 
-TypeScript
-<page_prefix>_quizAnswerRadioGroup: {
-  widgetType: 'RADIO_GROUP',
-  strategy: 'css',
-  selector: 'mat-radio-group[name="answers"], div[role="radiogroup"]',
-  subSelectors: {
-    option: 'mat-radio-button, [role="radio"]',
-    label: '.mdc-label, label'
-  }
-}
+   - **Reaching Authenticated / Deep Target Pages:**
+     - *Auto-Discovery First:* Search `tests/suites/**/*.yaml` for an existing profile or `refProfile` that navigates to the target page (matching by page name, URL, or domain keywords) so the tester does not have to supply a test path manually.
+     - *Session Capture:* Run `npx tsx src/cli/reachPage.ts --suite <discovered-yaml> --profile <discovered-profile>` to reach the target state, save `playwright/.auth/state.json`, and print `TARGET_URL=...`, then inspect the live page via Playwright MCP (`browser_navigate` -> `browser_snapshot`).
+     - *Fallback:* If no matching suite exists, check `.env` for base URL/credentials (never hardcode secrets) and navigate interactively via Playwright MCP, or ask the user if MFA/manual steps are required.
 
-Framework-Agnostic RADIO_GROUP Rule:
-When generating `RADIO_GROUP` UI Maps for component libraries (Angular Material, React MUI, Chakra UI, Ant Design, etc.):
-- Always include `[role="radio"]` or the top-level framework wrapper class in `subSelectors.option` (e.g. `'mat-radio-button, .MuiRadio-root, [role="radio"]'`).
-- Avoid mapping `subSelectors.option` directly to native `'input[type="radio"]'` if the target application uses custom component wrappers.
-⚠️ SPECIAL RULE: CUSTOM_SELECT (ANGULAR MATERIAL / PRIMENG / REACT SELECT)
-Classify an element as CUSTOM_SELECT if it is a non-native dropdown control (e.g., <mat-select>, <p-dropdown>, elements with role="combobox", or dynamic select containers).
+   - **Main Flow (MF-1) — Scenario-Scoped Extraction:**
+     - Parse the provided User Story / manual test cases (Gherkin or plain steps) to extract ONLY the actionable UI controls exercised by the tests—never capture ambient noise (column sorting links, static page counters, decorative headers) unless explicitly requested.
+     - Infer `widgetType` and required `subSelectors` / `columns` from the test actions and assertions.
 
-Preferred Strategy (label):
+   - **Alternate Flow 1 (AF-1) — Non-Destructive Delta Updates:**
+     - When updating an existing `.map.ts` file, **NEVER** rename, delete, or modify existing keys, strategies, selectors, `columns`, or existing `subSelectors` unless explicitly instructed to fix a broken locator.
+     - Deduplicate first: if an existing key already targets the requested DOM element, reuse and report it.
+     - Append only new delta keys (or newly required `subSelectors` / `columns` on an existing composite entry) and conclude with a diff summary: **Reused Keys**, **Added Delta Keys**, and **0 Existing Keys Modified**.
 
-Anchor directly to the control's visible/accessible label (e.g., <mat-label>State</mat-label> or aria-labelledby).
+   - **Alternate Flow 2 (AF-2) — Interactive State-Dependent Elements:**
+     - For modals, tabs, drawers, or portaled dropdowns (`[role="listbox"]`, `[role="dialog"]`, `.cdk-overlay-container`), trigger the UI state via Playwright MCP (`browser_click`, `browser_type`), capture a fresh `browser_snapshot`, and map the revealed controls.
 
-TypeScript
-<page_prefix>_stateSelect: {
-  widgetType: 'CUSTOM_SELECT',
-  strategy: 'label',
-  selector: 'State',
-  subSelectors: {
-    overlayPanel: '.cdk-overlay-container',
-    option: 'mat-option, [role="option"]'
-  }
-}
-Fallback Strategy (css):
+   - **Alternate Flow 3 (AF-3) — Exploratory Scaffolding:**
+     - If no test cases are provided, scan `<main>` (excluding global header/footer boilerplate) and annotate inferred `widgetType` entries with `// TODO: verify widgetType`.
 
-If label strategy cannot be resolved cleanly, use container :has() filtering to anchor the selector resiliently:
+   - **Locator Strategy & `getByRole` Strict-Mode Rules:**
+     - **Upgrade from Legacy Static Prompt:** Because the agent inspects the live accessibility tree via Playwright MCP `browser_snapshot`, `strategy: 'role'` (`role` + `text`) IS allowed and preferred **when and only when** the `(role, name)` pair is strictly unique on the page.
+     - **Strict-Mode Guard:** If duplicate `(role, name)` matches exist on the page, forbid bare `strategy: 'role'` (to prevent Playwright strict-mode failures) and use `strategy: 'label'`, scoped `css` (`:has()`), or relative `xpath` anchored to a unique parent landmark/heading.
+     - **Reject Dynamic Framework IDs:** Never use auto-generated IDs or hashes (`#mat-select-45`, `_R_...`, `_ngcontent-*`, dynamic `css-*` hashes, random UUIDs).
+     - **Iframe Resolution (`frameSelector`):** Whenever a control or composite container sits inside an `<iframe>`, include `frameSelector: 'iframe[...]'` directly on the `UiMapEntry`.
 
-TypeScript
-<page_prefix>_stateSelect: {
-  widgetType: 'CUSTOM_SELECT',
-  strategy: 'css',
-  selector: 'mat-form-field:has(mat-label:has-text("State")) mat-select',
-  subSelectors: {
-    overlayPanel: '.cdk-overlay-container',
-    option: 'mat-option'
-  }
-}
-Sub-Selector Rules:
+   - **Widget-Specific Structural Contracts:**
+     - **`RADIO_GROUP`:** Anchor to shared `name`, `<mat-radio-group>`, or `[role="radiogroup"]`; include `subSelectors: { option: 'mat-radio-button, .MuiRadio-root, [role="radio"]', label: '.mdc-label, label' }` (avoid bare `input[type="radio"]` for custom UI libraries).
+     - **`CUSTOM_SELECT` & `SEARCH`:** Prefer `strategy: 'label'` or scoped `css` (`:has()`). Define `subSelectors` (`overlayPanel` for body-portaled overlays like `.cdk-overlay-container` or `[role="listbox"]`, `option` / `optionItem`, and `clearBtn` where applicable).
+     - **`CARD` & `CONTAINER`:** Top-level `selector` MUST be a generic, un-parameterized container selector matching all instances (never hardcode `${anchorText}` or item text in the top-level `selector`); put relative child selectors inside `subSelectors`.
+     - **`WEB_TABLE`:** Use `widgetType: 'WEB_TABLE'` (never `'TABLE'`) with `selector` (table/grid root without text filters), `rowSelector` (e.g., `'div[role="row"], tbody tr'`), and 1-based `columns: { <colName>: { index: 1, controlType: 'LINK' | 'BUTTON' | 'SELECT' | 'TEXT', subSelector: '...' } }`. Map floating row action menus separately as `widgetType: 'MENU'`.
 
-overlayPanel: Optional container selector targeting global portal containers rendered at <body> root (e.g., .cdk-overlay-container, .p-dropdown-panel). Omit for inline React dropdowns.
+   - **Exception Guardrails & Deterministic Verification:**
+     - Never hallucinate locators for missing or ambiguous elements; emit a clear warning in the final output instead.
+     - Always run `npx tsc --noEmit` after creating or updating any `.map.ts` file or `UiMapIndex.ts` and resolve all TypeScript errors before finishing.
 
-option: Option item selector inside the listbox (defaults to 'mat-option, [role="option"]').
+2. **`src/cli/reachPage.ts`** — A reusable CLI helper accepting `--suite <yamlPath>` and `--profile <profileName>` that runs the navigation profile via `loadYamlSuite` and `CommandDispatcher`, saves `playwright/.auth/state.json`, and prints `STATE_SAVED=...` and `TARGET_URL=...`.
 
-⚠️ SPECIAL RULE: IFRAME RESOLUTION (frameSelector)
-Inspect the target element's DOM hierarchy up to the root document:
+3. **`CLAUDE.md`** (at the repository root — preserve existing content if the file already exists) containing `@AGENTS.md` on line 1 so Claude Code imports the exact same instructions without duplication.
 
-If an element or composite container resides inside an <iframe> or embedded shadow context, YOU MUST INCLUDE frameSelector.
-
-frameSelector MUST be a robust CSS selector targeting the iframe element itself (e.g., frameSelector: 'iframe[title="Quick Start Example"], iframe[src*="example-runner"]').
-
-Apply frameSelector directly onto the UiMapEntry object for all controls located inside that iframe context.
-
-⚠️ SPECIAL PARADIGM: WEB_TABLE & VIRTUALIZED GRID CONTRACT
-When mapping a tabular data grid, AG Grid, TanStack table, or dynamic list container, YOU MUST NOT use simple widgetType: 'TABLE' or flat XPaths.
-Follow this exact structured contract for tables and associated dropdown menus:
-
-WEB_TABLE Structure:
-
-TypeScript
-<page_prefix>_participantsTable: {
-  widgetType: 'WEB_TABLE',
-  strategy: 'css',
-  frameSelector: 'iframe#gridFrame',                   // Optional iframe selector if table is embedded
-  selector: 'div[role="grid"], table#participants',   // Target container root strictly without binding container text filters
-  rowSelector: 'div[role="row"], tbody tr',           // Scope for individual rows (favor ARIA div[role="row"] for virtualized grids)
-  columns: {
-    fullName: { index: 1, controlType: 'TEXT', subSelector: 'th a, td a, div[col-id="fullName"]' },
-    roles: { index: 3, controlType: 'TEXT', subSelector: '.role, div[col-id="roles"]' },
-    actionsMenu: { index: 6, controlType: 'BUTTON', subSelector: 'button[data-toggle="dropdown"], a.action-menu-toggle' }
-  }
-}
-Dynamic/Floating Dropdown Menu Structure:
-
-TypeScript
-<page_prefix>_rowDropdownMenu: {
-  widgetType: 'MENU',
-  strategy: 'css',
-  selector: '.dropdown-menu.show, .action-menu-item'
-}
-TABLE COLUMN CONTROL TYPE GENERATION RULES:
-
-If a table cell contains an interactive link element (e.g., <a>, [role="link"], clickable row header name), set controlType: 'LINK' and target the interactive element in subSelector (e.g., th.cell.c1 a).
-
-If a table cell contains an interactive action element (e.g., <button>, icon trigger, dropdown menu), set controlType: 'BUTTON' or controlType: 'SELECT' with its respective subSelector.
-
-Use controlType: 'TEXT' ONLY for static, non-clickable textual cells (e.g., <td> containing raw text without interactive child elements).
-
-All column indices MUST remain 1-based integers to reflect natural business column positions; the underlying framework engine will normalize 1-based indices to 0-based DOM array lookups.
-
-⚠️ SELECTOR STRATEGY OVERRIDE (ACTIVE)
-
-NO ROLE STRATEGY ALLOWED: Do NOT use strategy: "role" under any circumstances.
-
-Allowed Strategies: Use strictly strategy: "label", strategy: "css", or strategy: "xpath".
-
-Clean Selector Rules:
-
-NEVER output empty strings for optional properties (e.g., do NOT output text: ''). Only include text when matching visible textcontent.
-
-Label Guidance: Use strategy: "label" as primary choice for inputs, textboxes, standard selects, and CUSTOM_SELECT dropdowns.
-
-XPath Guidance: Favor relative XPaths that anchor to text, unique titles, or data attributes (e.g., //a[contains(@class, 'coursename')][.//span[@title='...']]). For dynamic components, build parent-to-child XPaths to guarantee unique element targeting.
-
-CSS Guidance: Use explicit CSS attributes or structural pseudo-selectors (e.g., a.coursename:has(span[title="..."])).
-
-REGISTRY INSTRUCTION RULES (ARTIFACT 2):
-Provide the exact code snippets to add to src/registries/UiMapIndex.ts.
-Condition: Check src/registries/UiMapIndex.ts first. If <PascalCasePageName>UiMap is ALREADY imported and registered, DO NOT add a duplicate entry. Otherwise, append the following snippets:
-
-Import Statement (at top of file):
-
-TypeScript
-import { <PascalCasePageName>UiMap } from './<AUT_Directory>/<FILE_NAME>.map';
-AUT Map Object Update:
-Add ...<PascalCasePageName>UiMap into the corresponding AUT map (e.g., MOODLE_UI_MAP or MHE_UI_MAP).
-
-UI_MAP_REGISTRY Entry:
-
-TypeScript
-<PascalCasePageName>UiMap,
-<camelCasePageName>UiMap: <PascalCasePageName>UiMap as Record<string, UiMapEntry>, // Alias safeguard
-Preserve exact casing for AUT directories in import paths (e.g., ./Moodle/ or ./Mhe/).
-
-When generating or adding a new UI Map:
-
-Provide the complete new file (e.g., src/registries/Mhe/mheLogin.map.ts).
-
-Provide the FULL updated src/registries/UiMapIndex.ts file including:
-
-The new import statement at the top.
-
-The map added to the relevant consolidated domain map (e.g., MHE_UI_MAP).
-
-BOTH PascalCase and camelCase keys added explicitly to UI_MAP_REGISTRY.
-
-NEVER provide delta snippets or shorthand object properties for UiMapIndex.ts.
-
-UI MAP GENERATION RULES FOR COMPOSITE CONTROLS (CARD & TABLE):
-
-GENERIC BASE SELECTORS:
-
-For CARD and CONTAINER controls, the top-level selector MUST be a generic, un-parameterized locator that matches all instances of the container class on the page (e.g., 'article.course-card', '.card-item', 'div[data-component="card"]').
-
-DO NOT include dynamic parameters like ${anchorText} or hardcoded text in the top-level selector. Card runtime scoping is automatically handled via CardControl filtering.
-
-RELATIVE SUB-SELECTORS:
-
-All entries inside subSelectors MUST be relative CSS/XPath selectors scoped internal to a single card container instance (e.g., 'button.assign-btn', '.course-title', 'a').
-
-WIDGET TYPE ENFORCEMENT:
-
-Always map composite card components as widgetType: 'CARD'.
-
-Ensure subSelectors captures key actionable children (links, action buttons, inputs, titles).
-
-INPUT FORMAT:
-APPLICATION_NAME: [e.g., Moodle or Mhe]
-PAGE_NAME: [e.g., MheLoginPage]
-FILE_NAME: [e.g., mheLogin.map.ts]
-PAGE_PREFIX: [e.g., mhe_login_]
-
-<DOM_INPUT>
-[PASTE DOM SNIPPET HERE]
-</DOM_INPUT>
+### Step 3: Verify
+Run `npx tsc --noEmit` to confirm `src/cli/reachPage.ts` compiles cleanly with zero TypeScript errors, and summarize the created files.

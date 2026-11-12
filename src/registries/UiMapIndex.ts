@@ -18,6 +18,8 @@ import { AngularTableUiMap } from './temp/AngularTableUiMap';
 import { ReactSelectUiMap }  from './temp/reactSelectUiMap';
 import {RadioGroupUiMap} from './temp/radioGroupUiMap';
 import {AngularRadioGroupUiMap} from './temp/AngularRadioGroupUiMap';
+import {AngularMaterialCardUiMap} from './temp/AngularMaterialCardUiMap';
+import {MuiAutocompleteUiMap} from './temp/MuiAutocompleteUiMap';
 
 
 // Consolidated Moodle Domain Map
@@ -42,6 +44,8 @@ export const TEMP_UI_MAP: Record<string, UiMapEntry> = {
   ...ReactSelectUiMap,
   ...RadioGroupUiMap,
   ...AngularRadioGroupUiMap,
+  ...AngularMaterialCardUiMap,
+  ...MuiAutocompleteUiMap,
 };
 
 // Unified Global Map
@@ -79,6 +83,8 @@ export const UI_MAP_REGISTRY: Record<string, Record<string, UiMapEntry>> = {
   customSelectUiMap: CustomSelectUiMap as Record<string, UiMapEntry>,
   ReactSelectUiMap: ReactSelectUiMap as Record<string,UiMapEntry>,
   RadioGroupUiMap: RadioGroupUiMap as Record<string,UiMapEntry>,
-  AngularRadioGroupUiMap: AngularRadioGroupUiMap as Record<string,UiMapEntry>
+  AngularRadioGroupUiMap: AngularRadioGroupUiMap as Record<string,UiMapEntry>,
+  AngularMaterialCardUiMap: AngularMaterialCardUiMap as Record<string,UiMapEntry>,
+  MuiAutocompleteUiMap: MuiAutocompleteUiMap as Record<string,UiMapEntry>,
 
 };

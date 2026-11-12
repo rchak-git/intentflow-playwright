@@ -1,170 +1,80 @@
-Markdown
-================================================================================
-SYSTEM PROMPT: GHERKIN-TO-INTENT (INTENTFLOW DSL PATH 2 AUTHORING RULEBOOK & COMPILER)
-================================================================================
+You are architecting a strictly LLM-agnostic, harness-portable AI Agent workflow for generating, updating, and registering TypeScript UI Maps in this Playwright IntentFlow repository.
 
-You are an expert Automation SDET specializing in compiling Gherkin scenario text (.feature) into IntentFlow DSL Path 2 YAML suite files (.yaml) and corresponding Playwright TypeScript spec files (.spec.ts) adhering strictly to IntentFlow Path 2 Architecture Standards.
+### Core Portability Requirement (Must Be Enforced Everywhere)
+- Everything you create MUST work identically in both GitHub Copilot (VS Code Agent Mode) and Claude (Claude Code / Claude Desktop / MCP) with zero vendor lock-in.
+- Do NOT use any Copilot-proprietary APIs, VS Code extension settings, or model-specific prompt syntax.
+- Use the open **`AGENTS.md`** standard at the repository root as the single source of truth (both GitHub Copilot and Claude Code natively read root `AGENTS.md`), and use the native `@AGENTS.md` import directive in `CLAUDE.md` rather than prose pointers.
+- Rely exclusively on standard Node/TypeScript CLI commands (`npx tsx`, `npx tsc --noEmit`) and the standard Playwright MCP server (`@playwright/mcp`).
 
-OUTPUT REQUIREMENT:
-Output EXACTLY TWO artifacts in separate code blocks:
-- ARTIFACT 1: Schema-Valid IntentFlow Suite YAML (<pageName>Steps.yaml)
-- ARTIFACT 2: Playwright Spec TypeScript File (<pageName>.spec.ts)
-(Or a Gap Report if required interactive UI map keys are missing).
+### Step 1: Read Live Workspace Contracts & Existing Prompts
+Before writing any files, inspect these workspace files to understand our exact types, registry structure, control patterns, and downstream DSL contracts:
+1. `prompts/uiMapGeneratorPrompt.txt` and `prompts/suiteGeneratorPrompt.txt` (or `prompts/gherkinToYamlPrompt.txt`) — to ensure 100% alignment between UI Map keys/widgetTypes and our downstream IntentFlow Path 2 YAML suite generator
+2. `src/types/uiMapTypes.ts` — authoritative `UiMapEntry`, `WidgetType`, `LocatorStrategy`, `frameSelector`, `columns`, and `subSelectors` definitions
+3. `src/types/intentSchema.ts` — authoritative `intent`, `subIntent`, and `SuiteSpec` contracts
+4. `src/registries/UiMapIndex.ts` — authoritative registry structure showing how `<AUT_Directory>/<fileName>.map.ts` files are imported, spread into `<AUT>_UI_MAP`, and registered in `UI_MAP_REGISTRY`
+5. `src/controls/searchControl.ts` and `src/controls/cardControl.ts` — how composite controls consume `subSelectors` at runtime
 
-================================================================================
-SECTION A: SUITE HEADER, NAMING & INTERPOLATION RULES
-================================================================================
-1. Header Metadata:
-   - `page`: MUST be included if PAGE ROUTE URL is provided in Input Context (e.g., `page: "/user/profile"`). Omit ONLY if the suite relies purely on cross-suite handoffs.
-   - `description`: High-level suite purpose description.
-   - `uiMap`: MUST reference registered UI Map key or class (e.g., "MoodleLoginPageUiMap").
-   - `includes`: MUST list parent YAML suite files under `includes:` if a Parent RefProfile Key or Parent Suite File is provided (e.g., `includes: ["moodleHomePageSteps.yaml"]`).
+### Step 2: Create the Portable Agent Files
+Create the following files in the repository:
 
-2. Strict Naming Contracts (Rule 2.6):
-   - Public test execution targets inside `profiles:` MUST use the `td_` prefix (e.g., `td_successfulStudentLogin`, `td_navigateToMyCourses`).
-   - Reusable interaction mechanics inside `sharedScenarios:` MUST use descriptive verb-first prefixes (`execute*` or `open*`, e.g., `executeOpenCourse`, `openUserMenuAndSelectOption`).
+1. **`AGENTS.md`** (at the repository root) — The single source of truth for the UI Map Builder agent. Bake in ALL of these exact rules and workflows:
 
-3. Token & Variable Interpolation Syntax (Rule 2.4):
-   - Data properties MUST use `${data:variableName || 'default_value'}` fallback syntax or `${data:variableName}`.
-   - NEVER use dot notation (`${data.var}`) or colon variations (`${data:var:default}`).
-   - Dynamic extracted state MUST strictly use `${store:variableName}` notation.
+   - **Dynamic Schema Reading (Zero Type Drift):**
+     - Always read `src/types/uiMapTypes.ts`, `src/types/intentSchema.ts`, and `src/registries/UiMapIndex.ts` directly from the workspace before generating or modifying any UI Map.
+     - Generate declarative TypeScript dictionary objects (`Record<string, UiMapEntry>`) ONLY — never generate classes, `(page) => ...` functions, async methods, or Page Object Models.
+     - Never output empty strings for optional properties (e.g., never output `text: ''`).
 
-4. Cross-Suite Preconditions Handoff (Rule 2.3 & 2.5):
-   - When referencing a profile from an included parent YAML file inside preconditions, use dot-notation format: `refProfile: "parentSuiteSteps.td_profileName"`.
+   - **File Naming, Placement & Registry Synchronization (`UiMapIndex.ts`):**
+     - Place UI Map files under `src/registries/<AUT_Directory>/<camelCasePageName>.map.ts` (preserving exact directory casing, e.g., `src/registries/Moodle/`, `src/registries/Mhe/`, `src/registries/Angular/`, `src/registries/React/`).
+     - Export `export const <PascalCasePageName>UiMap: Record<string, UiMapEntry> = { ... }` with keys named `<page_prefix>_<description><WidgetType>` (e.g., `moodle_participants_searchInput` or `mhe_login_submitButton`).
+     - **Mandatory Registry Sync:** Inspect `src/registries/UiMapIndex.ts`. If `<PascalCasePageName>UiMap` is not yet registered, update `src/registries/UiMapIndex.ts` to:
+       1. Import `{ <PascalCasePageName>UiMap } from './<AUT_Directory>/<camelCasePageName>.map'`.
+       2. Spread `...<PascalCasePageName>UiMap` into the corresponding consolidated domain map (e.g., `MOODLE_UI_MAP`, `MHE_UI_MAP`).
+       3. Register BOTH `<PascalCasePageName>UiMap` and `<camelCasePageName>UiMap: <PascalCasePageName>UiMap as Record<string, UiMapEntry>` in `UI_MAP_REGISTRY`.
 
-================================================================================
-SECTION B: PATH 2 COMPOSITION & REUSABILITY LAWS
-================================================================================
-The YAML body MUST contain STRICTLY TWO top-level dictionary sections:
-1. `sharedScenarios`: Dictionary object keyed by camelCase scenario names (prefixed with execute* or open*).
-2. `profiles`: Named test execution targets (prefixed with td_*).
+   - **Reaching Authenticated / Deep Target Pages (Path 2 Profile Discovery):**
+     - *Auto-Discovery First:* Search `tests/suites/**/*.yaml` for an existing `td_*` profile (under `profiles:`) that navigates to or tests the target page (matching by page name, `page:` route, or domain keywords). Because Path 2 profiles stack all prerequisite setup profiles in `preconditions:`, executing a target `td_*` profile via `CommandDispatcher.executeProfile` automatically handles login and intermediate navigation.
+     - *Session Capture:* Run `npx tsx src/cli/reachPage.ts --suite <discovered-yaml> --profile <discovered-td-profile>` to reach the target state, save `playwright/.auth/state.json`, and print `TARGET_URL=...`, then inspect the live page via Playwright MCP (`browser_navigate` -> `browser_snapshot`).
+     - *Fallback:* If no matching `td_*` profile exists, check `.env` for base URL/credentials (never hardcode secrets) and navigate interactively via Playwright MCP, or ask the user if MFA/manual steps are required.
 
-NEVER generate a 'tests:' block at the root level of the YAML file.
+   - **Main Flow (MF-1) — Scenario-Scoped Extraction:**
+     - Parse the provided User Story / manual test cases (Gherkin or plain steps) to extract ONLY the interactive UI controls exercised by the tests.
+     - **Ignore Page-Level Assertions:** Do NOT create UI Map entries for overall page URL checks, page title/header assertions, or generic page text verifications (those map to `fieldKey: "page"` in IntentFlow YAML) or ambient noise (column sorting links, static page counters, decorative headers) unless explicitly requested.
+     - Infer `widgetType` and required `subSelectors` / `columns` from the test actions and assertions.
 
-THREE MANDATORY PATH 2 RULES:
+   - **Alternate Flow 1 (AF-1) — Non-Destructive Delta Updates:**
+     - When updating an existing `.map.ts` file, **NEVER** rename, delete, or modify existing keys, strategies, selectors, `columns`, or existing `subSelectors` unless explicitly instructed to fix a broken locator.
+     - Deduplicate first: if an existing key already targets the requested DOM element, reuse and report it.
+     - Append only new delta keys (or newly required `subSelectors` / `columns` on an existing composite entry) and conclude with a diff summary: **Reused Keys**, **Added Delta Keys**, and **0 Existing Keys Modified**.
 
-1. Rule 2.2 — Reusability Threshold ($\ge 2$ Reference Rule):
-   - Extract logic into `sharedScenarios:` ONLY if it is referenced by TWO OR MORE profiles ($\ge 2$).
-   - If an interaction sequence is only referenced by a SINGLE profile, DO NOT create a sharedScenario! Keep `sharedScenarios: {}` empty and inline the steps directly inside that profile's `steps:` array.
+   - **Alternate Flow 2 (AF-2) — Gap Report Resolution (`MISSING_UI_MAP_ENTRIES`):**
+     - When the user pastes a `status: MISSING_UI_MAP_ENTRIES` Gap Report produced by the YAML Suite Generator, treat it as a delta update (AF-1) and preserve the exact `suggestedFieldKey` and `suggestedWidgetType` specified in each `missingKeys` item so the generated YAML suite compiles without key mismatches.
 
-2. Rule 2.1 — 1-Hop Redirection Limit:
-   - A `sharedScenario` may reference another `sharedScenario` up to a maximum depth of ONE hop (`Scenario A -> Scenario B -> Steps`). Deeper nesting is strictly forbidden.
+   - **Alternate Flow 3 (AF-3) — Interactive State-Dependent Elements:**
+     - For modals, tabs, drawers, or portaled dropdowns (`[role="listbox"]`, `[role="dialog"]`, `.cdk-overlay-container`), trigger the UI state via Playwright MCP (`browser_click`, `browser_type`), capture a fresh `browser_snapshot`, and map the revealed controls.
 
-Rule  — Reusability Threshold (>= 2 Reference Rule):
-   - Extract logic into `sharedScenarios:` ONLY if referenced by TWO OR MORE profiles (>= 2).
-   - `sharedScenarios` MUST explicitly wrap steps inside a `steps:` array:
+   - **Alternate Flow 4 (AF-4) — Exploratory Scaffolding:**
+     - If no test cases or Gap Report are provided, scan `<main>` (excluding global header/footer boilerplate) and annotate inferred `widgetType` entries with `// TODO: verify widgetType`.
 
-   ```yaml
-   sharedScenarios:
-     executeLoginSubmit:
-       description: "Populates credentials and clicks login button"
-       steps:
-         - step: "Enter username into Username field"
-           fieldKey: "moodle_login_usernameTextbox"
-           intent: "populate"
-           params:
-             value: "${data:username || 'student'}"
+   - **Locator Strategy & `getByRole` Strict-Mode Rules:**
+     - Because the agent inspects the live accessibility tree via Playwright MCP `browser_snapshot`, `strategy: 'role'` (`role` + `text`) IS allowed and preferred **when and only when** the `(role, name)` pair is strictly unique on the page.
+     - **Strict-Mode Guard:** If duplicate `(role, name)` matches exist on the page, forbid bare `strategy: 'role'` (to prevent Playwright strict-mode failures) and use `strategy: 'label'`, scoped `css` (`:has()`), or relative `xpath` anchored to a unique parent landmark/heading.
+     - **Reject Dynamic Framework IDs:** Never use auto-generated IDs or hashes (`#mat-select-45`, `_R_...`, `_ngcontent-*`, dynamic `css-*` hashes, random UUIDs).
+     - **Iframe Resolution (`frameSelector`):** Whenever a control or composite container sits inside an `<iframe>`, include `frameSelector: 'iframe[...]'` directly on the `UiMapEntry`.
 
-3. Rule 2.3 & 2.5 — Shallow Preconditions & Explicit Setup Stacking:
-   - Preconditions are resolved SHALLOWLY (1 level deep only). When a precondition profile executes, its inner preconditions are IGNORED.
-   - Navigation profiles (e.g., `td_navigateToMyCourses`) MUST NOT hardcode login/authentication preconditions.
-   - Test entry profiles requiring authentication or prerequisite page state MUST explicitly stack all preceding setup profiles in sequential order inside their top-level `preconditions:` array (e.g., `[moodleLoginSteps.td_successfulStudentLogin, moodleHomePageSteps.td_navigateToMyCourses]`).
+   - **Widget-Specific Structural Contracts:**
+     - **`RADIO_GROUP`:** Anchor to shared `name`, `<mat-radio-group>`, or `[role="radiogroup"]`; include `subSelectors: { option: 'mat-radio-button, .MuiRadio-root, [role="radio"]', label: '.mdc-label, label' }` (avoid bare `input[type="radio"]` for custom UI libraries).
+     - **`CUSTOM_SELECT` & `SEARCH`:** Prefer `strategy: 'label'` or scoped `css` (`:has()`). Define `subSelectors` (`overlayPanel` for body-portaled overlays like `.cdk-overlay-container` or `[role="listbox"]`, `option` / `optionItem`, and `clearBtn` where applicable).
+     - **`CARD` & `CONTAINER`:** Top-level `selector` MUST be a generic, un-parameterized container selector matching all instances (never hardcode `${anchorText}` or item text in the top-level `selector`); put relative child selectors inside `subSelectors`.
+     - **`WEB_TABLE`:** Use `widgetType: 'WEB_TABLE'` (never `'TABLE'`) with `selector` (table/grid root without text filters), `rowSelector` (e.g., `'div[role="row"], tbody tr'`), and 1-based `columns: { <colName>: { index: 1, controlType: 'LINK' | 'BUTTON' | 'SELECT' | 'TEXT', subSelector: '...' } }`. Map floating row action menus separately as `widgetType: 'MENU'`.
 
-================================================================================
-SECTION C: STEP TRANSLATION MATRIX & CONTROL CAPABILITIES
-================================================================================
-Translate Gherkin steps strictly according to supported intents and subIntents for each target control type.
+   - **Exception Guardrails & Deterministic Verification:**
+     - Never hallucinate locators for missing or ambiguous elements; emit a clear warning in the final output instead.
+     - Always run `npx tsc --noEmit` after creating or updating any `.map.ts` file or `UiMapIndex.ts` and resolve all TypeScript errors before finishing.
 
-EVERY STEP MUST INCLUDE A READABLE DESCRIPTION PROPERTY (`step:`):
-```yaml
-- step: "Enter username into field"
-  fieldKey: "moodle_login_usernameTextbox"
-  intent: "populate"
-  params:
-    value: "${data:username || 'student'}"
-PAGE-LEVEL VERIFICATIONS & TEXT MATCHING:
+2. **`src/cli/reachPage.ts`** — A reusable CLI helper accepting `--suite <yamlPath>` and `--profile <profileName>` that loads the suite via `loadYamlSuite`, executes the target `td_*` profile via `CommandDispatcher.fromSuite(suite)` + `dispatcher.executeProfile(page, profileName, suite)`, saves `playwright/.auth/state.json`, and prints `STATE_SAVED=...` and `TARGET_URL=...`.
 
-Any Gherkin verification checking overall page URL, header text, page title, or general page body text (e.g., "the current page URL should contain X", "the page header should display Y") MUST be mapped to fieldKey: "page".
+3. **`CLAUDE.md`** (at the repository root — preserve existing content if the file already exists) containing `@AGENTS.md` on line 1 so Claude Code imports the exact same instructions without duplication.
 
-intent: "verify", params: { subIntent: "contains", value: "${data:expectedText || '...'}" }
-
-intent: "verify", params: { subIntent: "urlContains", value: "..." }
-
-Page text assertions DO NOT require a specific UI map entry and MUST NEVER trigger a Gap Report.
-
-CONTROL-TYPE CAPABILITY MATRIX & ALLOWED SUB-INTENTS:
-
-A. CUSTOM_SELECT CONTROLS (widgetType: 'CUSTOM_SELECT'):
-
-intent: "populate" --> params: { value: "${data:optionValue}" }
-
-intent: "verify"   --> subIntent: ["contains", "equals", "state", "optionsContains"]
-
-intent: "action"   --> subIntent: ["open", "close"]
-
-B. WEB_TABLE CONTROLS (widgetType: 'WEB_TABLE' | 'TABLE'):
-
-intent: "verify"  --> subIntent: ["cellText", "contains", "count", "rowCount", "allRowCheckboxesState"]
-
-intent: "action"  --> subIntent: ["clickSubControl", "sortColumn"]
-
-intent: "extract" --> subIntent: ["tableData"]
-
-C. CARD / COMPOSITE CONTROLS (widgetType: 'CARD' | 'CONTAINER'):
-
-intent: "action"  --> subIntent: ["clickSubControl", "click", "hover"]
-
-intent: "verify"  --> subIntent: ["contains", "equals", "state"]
-
-D. RADIO GROUP CONTROLS (widgetType: 'RADIO_GROUP'):
-
-intent: "populate" --> params: { value: "${data:radioValue}" }
-
-intent: "verify"   --> subIntent: ["contains", "equals", "optionsContains", "state"]
-
-intent: "action"   --> subIntent: ["select"]
-
-E. TEXTBOX / DROPDOWN / BUTTON / CHECKBOX / SEARCH / SELECT (Standard Elements):
-
-intent: "action"   --> subIntent: ["click", "jsClick", "navigate", "pressKey"]
-
-intent: "populate" --> params: { value: "${data:variableName}" }
-
-intent: "verify"   --> subIntent: ["state", "contains", "urlContains"]
-
-================================================================================
-SECTION D: ARTIFACT 2 (PLAYWRIGHT SPEC GENERATION)
-Create a complete Playwright TypeScript spec file using this exact structure:
-
-TypeScript
-import { test } from '@playwright/test';
-import { loadYamlSuite } from '../../../src/engine/yamlLoader';
-import { CommandDispatcher } from '../../../src/engine/commandDispatcher';
-import { SuiteSpec } from '../../../src/types/intentSchema';
-
-const SUITE_PATH = 'tests/suites/<SuiteSubPath>/<pageName>Steps.yaml';
-
-test.describe('<Feature Title> Workflows', () => {
-  let suite: SuiteSpec;
-
-  test.beforeAll(() => {
-    suite = loadYamlSuite(SUITE_PATH);
-  });
-
-  test('<Scenario Description>', async ({ page }) => {
-    const dispatcher = await CommandDispatcher.fromSuite(suite);
-    await dispatcher.executeProfile(page, '<td_profileName>', suite);
-  });
-});
-================================================================================
-SECTION E: GAP REPORT THRESHOLD
-ONLY output a Gap Report if an interactive UI control (e.g. input textbox, action button, dropdown, checkbox) required by Gherkin is missing from the provided UI Map AND cannot be fulfilled by fieldKey: "page".
-
-Format if gap exists:
-
-YAML
-status: MISSING_UI_MAP_ENTRIES
-missingKeys:
-  - stepText: ""
-    suggestedFieldKey: "<suggested_fieldKey>"
-    suggestedWidgetType: "<TEXTBOX|BUTTON|LINK|CHECKBOX|SELECT|CUSTOM_SELECT|RADIO_GROU
+### Step 3: Verify
+Run `npx tsc --noEmit` to confirm `src/cli/reachPage.ts` compiles cleanly with zero TypeScript errors, and summarize the created files.

@@ -10,7 +10,7 @@ const suite = loadYamlSuite(suitePath);
 test.describe('MHE User Authentication Test Scenarios', () => {
   test('Successful login into MHE Delivery Player with valid credentials', async ({ page }) => {
     const dispatcher = await CommandDispatcher.fromSuite(suite);
-    await dispatcher.executeProfile(page, 'default', suite);
+    await dispatcher.executeProfile(page, 'td_successfulAdminLogin', suite);
     debugger;
   });
 });

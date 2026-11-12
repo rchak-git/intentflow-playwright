@@ -1,0 +1,69 @@
+page: "https://material.angular.dev/components/card/examples"
+description: "Angular Material MDC Card Component Verification and Action Suite"
+uiMap: "AngularMaterialCardUiMap"
+
+sharedScenarios: {}
+
+profiles:
+  td_verifyAndInteractWithShibaCard:
+    description: "Anchor Shiba Inu mat-card, verify header/body metadata, and click LIKE and SHARE buttons"
+    steps:
+      - step: "Verify Shiba Inu example card is visible"
+        fieldKey: "ng_material_shibaCard"
+        intent: "verify"
+        params:
+          subIntent: "state"
+          anchorText: "Shiba Inu"
+          value: "visible"
+
+      - step: "Verify card title equals Shiba Inu"
+        fieldKey: "ng_material_shibaCard"
+        intent: "verify"
+        params:
+          subIntent: "equals"
+          anchorText: "Shiba Inu"
+          childWidget: "title"
+          value: "Shiba Inu"
+
+      - step: "Verify card subtitle equals Dog Breed"
+        fieldKey: "ng_material_shibaCard"
+        intent: "verify"
+        params:
+          subIntent: "equals"
+          anchorText: "Shiba Inu"
+          childWidget: "subtitle"
+          value: "Dog Breed"
+
+      - step: "Verify card body contains breed description"
+        fieldKey: "ng_material_shibaCard"
+        intent: "verify"
+        params:
+          subIntent: "contains"
+          anchorText: "Shiba Inu"
+          childWidget: "content"
+          value: "The Shiba Inu is the smallest of the six original and distinct spitz breeds of dog from Japan."
+
+      - step: "Verify card hero image is visible"
+        fieldKey: "ng_material_shibaCard"
+        intent: "verify"
+        params:
+          subIntent: "state"
+          anchorText: "Shiba Inu"
+          childWidget: "image"
+          value: "visible"
+
+      - step: "Click LIKE button on Shiba Inu card"
+        fieldKey: "ng_material_shibaCard"
+        intent: "action"
+        params:
+          subIntent: "clickSubControl"
+          anchorText: "Shiba Inu"
+          childWidget: "likeButton"
+
+      - step: "Click SHARE button on Shiba Inu card"
+        fieldKey: "ng_material_shibaCard"
+        intent: "action"
+        params:
+          subIntent: "clickSubControl"
+          anchorText: "Shiba Inu"
+          childWidget: "shareButton"

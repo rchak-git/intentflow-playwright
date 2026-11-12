@@ -1,0 +1,43 @@
+page: "https://mui.com/material-ui/react-autocomplete/"
+description: "React Material UI Combo Box / Search Autocomplete Verification Suite"
+uiMap: "MuiAutocompleteUiMap"
+
+sharedScenarios: {}
+
+profiles:
+  td_searchAndSelectMovie:
+    description: "Type into React MUI Movie combobox, select matching option from portaled listbox, and verify selected value"
+    steps:
+      - step: "Verify Movie combobox is visible"
+        fieldKey: "react_mui_movieSearchBox"
+        intent: "verify"
+        params:
+          subIntent: "state"
+          value: "visible"
+
+      - step: "Type Godfather and select The Godfather from autocomplete listbox"
+        fieldKey: "react_mui_movieSearchBox"
+        intent: "populate"
+        params:
+          value: "Godfather"
+          anchorText: "The Godfather"
+
+      - step: "Verify Movie combobox equals The Godfather"
+        fieldKey: "react_mui_movieSearchBox"
+        intent: "verify"
+        params:
+          subIntent: "equals"
+          value: "The Godfather"
+
+      - step: "Clear Movie combobox selection"
+        fieldKey: "react_mui_movieSearchBox"
+        intent: "action"
+        params:
+          subIntent: "clear"
+
+      - step: "Verify Movie combobox is cleared"
+        fieldKey: "react_mui_movieSearchBox"
+        intent: "verify"
+        params:
+          subIntent: "equals"
+          value: ""
