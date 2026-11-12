@@ -1,0 +1,177 @@
+page: "/user/index.php"
+description: "Moodle Participants Page Step Definitions and Workflows"
+uiMap: "MoodleParticipantUiMap"
+
+includes:
+  - "moodleCourseSteps.yaml"
+
+# ---------------------------------------------------------------------------
+# SHARED SCENARIOS (Reserved for mechanics shared across >= 2 profiles)
+# ---------------------------------------------------------------------------
+sharedScenarios: {}
+
+# ---------------------------------------------------------------------------
+# PROFILES (Public Test Entrances — Explicit Precondition Stacking — Prefix: td_*)
+# ---------------------------------------------------------------------------
+profiles:
+  td_verifyCourseParticipantsList:
+    description: "Execution profile: Verifies course participants table visibility and presence of specific users"
+    preconditions:
+      - refProfile: "moodleLoginSteps.td_successfulStudentLogin"
+      - refProfile: "moodleHomePageSteps.td_navigateToMyCourses"
+      - refProfile: "moodleCourseSteps.td_navigateToParticipants"
+    steps:
+      - step: "Verify the Participants table is visible"
+        fieldKey: "moodle_participant_participantsTable"
+        intent: "verify"
+        params:
+          subIntent: "state"
+          value: "visible"
+
+      - step: "Verify the Participants table contains participant 1"
+        fieldKey: "moodle_participant_participantsTable"
+        intent: "verify"
+        params:
+          subIntent: "contains"
+          value: "${data:participant1 || 'Sam Student'}"
+
+      - step: "Verify the Participants table contains participant 2"
+        fieldKey: "moodle_participant_participantsTable"
+        intent: "verify"
+        params:
+          subIntent: "contains"
+          value: "${data:participant2 || 'Terri Teacher'}"
+
+  td_verifyParticipantsTableSummary:
+    description: "Execution profile: Validates full-table summary specs (visibility, row count, content)"
+    preconditions:
+      - refProfile: "moodleLoginSteps.td_successfulStudentLogin"
+      - refProfile: "moodleHomePageSteps.td_navigateToMyCourses"
+      - refProfile: "moodleCourseSteps.td_navigateToParticipants"
+    steps:
+      - step: "Verify the Participants table is visible"
+        fieldKey: "moodle_participant_participantsTable"
+        intent: "verify"
+        params:
+          subIntent: "state"
+          value: "visible"
+
+      - step: "Verify the Participants table displays expected row count"
+        fieldKey: "moodle_participant_participantsTable"
+        intent: "verify"
+        params:
+          subIntent: "count"
+          value: 2
+
+      - step: "Verify the Participants table contains Sam Student"
+        fieldKey: "moodle_participant_participantsTable"
+        intent: "verify"
+        params:
+          subIntent: "contains"
+          value: "${data:participant1 || 'Sam Student'}"
+
+      - step: "Verify the Participants table contains Terri Teacher"
+        fieldKey: "moodle_participant_participantsTable"
+        intent: "verify"
+        params:
+          subIntent: "contains"
+          value: "${data:participant2 || 'Terri Teacher'}"
+
+  td_assertColumnValuesAnchoredToRow:
+    description: "Execution profile: Asserts column values anchored to dynamic rows (Paradigm 2 WebTable)"
+    preconditions:
+      - refProfile: "moodleLoginSteps.td_successfulStudentLogin"
+      - refProfile: "moodleHomePageSteps.td_navigateToMyCourses"
+      - refProfile: "moodleCourseSteps.td_navigateToParticipants"
+    steps:
+      - step: "Verify Roles column for Sam Student"
+        fieldKey: "moodle_participant_participantsTable"
+        intent: "verify"
+        params:
+          subIntent: "cellText"
+          anchorText: "${data:samName || 'Sam Student'}"
+          column: "roles"
+          value: "${data:samRole || 'Student'}"
+
+      - step: "Verify Groups column for Sam Student"
+        fieldKey: "moodle_participant_participantsTable"
+        intent: "verify"
+        params:
+          subIntent: "cellText"
+          anchorText: "${data:samName || 'Sam Student'}"
+          column: "groups"
+          value: "${data:samGroups || 'No groups'}"
+
+      - step: "Verify Roles column for Terri Teacher"
+        fieldKey: "moodle_participant_participantsTable"
+        intent: "verify"
+        params:
+          subIntent: "cellText"
+          anchorText: "${data:terriName || 'Terri Teacher'}"
+          column: "roles"
+          value: "${data:terriRole || 'Teacher'}"
+
+      - step: "Verify Groups column for Terri Teacher"
+        fieldKey: "moodle_participant_participantsTable"
+        intent: "verify"
+        params:
+          subIntent: "cellText"
+          anchorText: "${data:terriName || 'Terri Teacher'}"
+          column: "groups"
+          value: "${data:terriGroups || 'No groups'}"
+
+  td_selectParticipantAndTriggerBulkAction:
+    description: "Execution profile: Selects participant checkbox and initiates bulk action"
+    preconditions:
+      - refProfile: "moodleLoginSteps.td_successfulStudentLogin"
+      - refProfile: "moodleHomePageSteps.td_navigateToMyCourses"
+      - refProfile: "moodleCourseSteps.td_navigateToParticipants"
+    steps:
+      - step: "Select checkbox for specified row anchor"
+        fieldKey: "moodle_participant_participantsTable"
+        intent: "action"
+        params:
+          subIntent: "clickSubControl"
+          anchorText: "${data:samName || 'Sam Student'}"
+          column: "select"
+
+      - step: "Select action from With selected users dropdown"
+        fieldKey: "moodle_participant_withSelectedUsersSelect"
+        intent: "populate"
+        params:
+          value: "${data:bulkAction || 'Comma separated values (.csv)'}"
+
+  td_extractRowValuesAndStoreDynamicTableState:
+    description: "Execution profile: Extracts table data to variable storage"
+    preconditions:
+      - refProfile: "moodleLoginSteps.td_successfulStudentLogin"
+      - refProfile: "moodleHomePageSteps.td_navigateToMyCourses"
+      - refProfile: "moodleCourseSteps.td_navigateToParticipants"
+    steps:
+      - step: "Extract all row data from Participants table"
+        fieldKey: "moodle_participant_participantsTable"
+        intent: "extract"
+        params:
+          subIntent: "tableData"
+          storeAs: "enrolledParticipants"
+
+  td_selectAllParticipantsTestSuite:
+    description: "Execution profile: Verifies select all header checkbox functionality"
+    preconditions:
+      - refProfile: "moodleLoginSteps.td_successfulStudentLogin"
+      - refProfile: "moodleHomePageSteps.td_navigateToMyCourses"
+      - refProfile: "moodleCourseSteps.td_navigateToParticipants"
+    steps:
+      - step: "Select header checkbox to select all rows"
+        fieldKey: "moodle_participant_selectAllCheckbox"
+        intent: "action"
+        params:
+          subIntent: "click"
+
+      - step: "Verify all row checkboxes are selected"
+        fieldKey: "moodle_participant_participantsTable"
+        widgetType: "WEB_TABLE"
+        intent: "verify"
+        params:
+          subIntent: "allRowCheckboxesState"
+          value: "true"

@@ -1,0 +1,84 @@
+page: "https://material.angular.dev/components/radio/examples"
+description: "Verify and select options in the Angular ngModel radio group to validate selection and dynamic output label updates"
+uiMap: "AngularRadioGroupUiMap"
+
+sharedScenarios:
+  navigateToRadioPage:
+    testName: "Navigate to Angular Radio Group Page"
+    description: "Navigates to the Angular Material radio group documentation page"
+    steps:
+      - step: "Given I am on the Angular Material Radio Group documentation page"
+        fieldKey: "page"
+        intent: "action"
+        params:
+          subIntent: "navigate"
+
+  verifyFavoriteSeasonOptionsContains:
+    testName: "Verify Favorite Season Options Contains"
+    description: "Verifies that the favorite season radio group contains a specific option"
+    steps:
+      - step: 'Then the favorite season radio group options should contain "Summer"'
+        fieldKey: "radio_angular_favoriteSeasonRadioGroup"
+        intent: "verify"
+        params:
+          subIntent: "optionsContains"
+          value: "${data:expectedOption}"
+
+  verifyFavoriteSeasonSelection:
+    testName: "Verify Favorite Season Selected Option"
+    description: "Verifies the currently selected option in the favorite season radio group"
+    steps:
+      - step: "Then the favorite season radio group should have selected option"
+        fieldKey: "radio_angular_favoriteSeasonRadioGroup"
+        intent: "verify"
+        params:
+          subIntent: "equals"
+          value: "${data:expectedSelected}"
+
+  selectFavoriteSeasonOption:
+    testName: "Select Favorite Season Option"
+    description: "Selects a radio option in the favorite season radio group"
+    steps:
+      - step: "When I select option in the favorite season radio group"
+        fieldKey: "radio_angular_favoriteSeasonRadioGroup"
+        intent: "populate"
+        params:
+          value: "${data:selectedRadio}"
+
+  verifyFavoriteSeasonOutputText:
+    testName: "Verify Favorite Season Output Text"
+    description: "Verifies the favorite season dynamic text display"
+    steps:
+      - step: "And the favorite season dynamic text should display expected text"
+        fieldKey: "text_favoriteSeasonOutput"
+        intent: "verify"
+        params:
+          subIntent: "contains"
+          value: "${data:expectedOutputText}"
+
+  verifyAndSelectFavoriteSeasonWorkflow:
+    testName: "Verify Initial State Select Season and Validate Dynamic Output Workflow"
+    description: "Composite scenario covering option presence, selecting Summer, and validating updated output label"
+    steps:
+      - refScenario: "navigateToRadioPage"
+      - refScenario: "verifyFavoriteSeasonOptionsContains"
+        data:
+          expectedOption: "${data:expectedOption}"
+      - refScenario: "selectFavoriteSeasonOption"
+        data:
+          selectedRadio: "${data:newSelection}"
+      - refScenario: "verifyFavoriteSeasonSelection"
+        data:
+          expectedSelected: "${data:newSelection}"
+      - refScenario: "verifyFavoriteSeasonOutputText"
+        data:
+          expectedOutputText: "${data:expectedOutputText}"
+
+profiles:
+  verifyAndSelectFavoriteSeasonProfile:
+    refScenario: "verifyAndSelectFavoriteSeasonWorkflow"
+    description: "Profile selecting Summer and validating dynamic label output"
+    data:
+      expectedOption: "Summer"
+      newSelection: "Summer"
+      expectedOutputText: "Your favorite season is: Summer"

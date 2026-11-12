@@ -1,0 +1,125 @@
+page: "/login/index.php"
+description: "Moodle User Authentication Suite"
+uiMap: "MoodleParticipantUiMap"
+
+# ---------------------------------------------------------------------------
+# SHARED SCENARIOS (Private Step Mechanics — Prefix: execute*)
+# ---------------------------------------------------------------------------
+sharedScenarios:
+  executeStandardLogin:
+    description: "Navigates to login page, enters user credentials, and submits login form"
+    steps:
+      - step: "Navigate to Moodle login page"
+        fieldKey: "page"
+        intent: "action"
+        params:
+          subIntent: "navigate"
+          value: "/login/index.php"
+
+      - step: "Enter username"
+        fieldKey: "moodle_login_usernameTextbox"
+        intent: "populate"
+        params:
+          value: "${data:username}"
+
+      - step: "Enter password"
+        fieldKey: "moodle_login_passwordTextbox"
+        intent: "populate"
+        params:
+          value: "${data:password}"
+
+      - step: "Click Log In button"
+        fieldKey: "moodle_login_loginButton"
+        intent: "action"
+        params:
+          subIntent: "click"
+
+  executeValidLoginAndVerifyLanding:
+    description: "Submits credentials and verifies landing state using defaults if not overridden"
+    steps:
+      - refScenario: "executeStandardLogin"
+
+      - step: "Verify landing page URL"
+        fieldKey: "page"
+        intent: "verify"
+        params:
+          subIntent: "urlContains"
+          value: "${data:expectedUrlSubstring || 'sandbox.moodledemo.net'}"
+
+      - step: "Verify landing page header text"
+        fieldKey: "page"
+        intent: "verify"
+        params:
+          subIntent: "contains"
+          value: "${data:expectedHeaderText || 'Moodle 5.3 sandbox demo'}"
+
+  executeInvalidLoginAndVerifyError:
+    description: "Executes standard login attempt and verifies terminal error state"
+    steps:
+      - refScenario: "executeStandardLogin"
+
+      - step: "Verify error notification message"
+        fieldKey: "page"
+        intent: "verify"
+        params:
+          subIntent: "contains"
+          value: "${data:expectedErrorNotification}"
+
+      - step: "Verify URL remains on login page"
+        fieldKey: "page"
+        intent: "verify"
+        params:
+          subIntent: "urlContains"
+          value: "${data:expectedUrlSubstring || '/login/index.php'}"
+
+  executeGuestLogin:
+    description: "Navigates to login page and authenticates as guest user"
+    steps:
+      - step: "Navigate to Moodle login page"
+        fieldKey: "page"
+        intent: "action"
+        params:
+          subIntent: "navigate"
+          value: "/login/index.php"
+
+      - step: "Click Log in as guest button"
+        fieldKey: "moodle_login_loginAsGuestButton"
+        intent: "action"
+        params:
+          subIntent: "click"
+
+# ---------------------------------------------------------------------------
+# PROFILES (Public Execution Entrances — Prefix: td_*)
+# ---------------------------------------------------------------------------
+profiles:
+  td_successfulStudentLogin:
+    description: "Valid student login — relies on inline defaults for landing verification"
+    steps:
+      - refScenario: "executeValidLoginAndVerifyLanding"
+        data:
+          username: "student"
+          password: "sandbox24"
+
+  td_successfulAdminLogin:
+    description: "Valid admin login — overrides landing target defaults for admin console"
+    steps:
+      - refScenario: "executeValidLoginAndVerifyLanding"
+        data:
+          username: "admin"
+          password: "sandbox24"
+          expectedUrlSubstring: "sandbox.moodledemo.net"
+          expectedHeaderText: "Hi, Admin!"
+
+  td_unsuccessfulLoginWithInvalidPassword:
+    description: "Execution target for invalid password login test"
+    steps:
+      - refScenario: "executeInvalidLoginAndVerifyError"
+        data:
+          username: "student"
+          password: "WrongPassword123!"
+          expectedErrorNotification: "Your login info may be incorrect. Please try again."
+
+  td_guestLogin:
+    description: "Execution profile for guest user authentication"
+    steps:
+      - refScenario: "executeGuestLogin"

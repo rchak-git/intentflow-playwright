@@ -1,0 +1,92 @@
+page: "https://react-select.com/home"
+description: "Verify and interact with the dynamic color select dropdown control"
+uiMap: "ReactSelectUiMap"
+
+sharedScenarios:
+  navigateToPage:
+    testName: "Navigate to Page"
+    description: "Navigates to the React Select documentation homepage"
+    steps:
+      - step: "Given I am on the React Select documentation page"
+        fieldKey: "page"
+        intent: "action"
+        params:
+          subIntent: "navigate"
+
+  openColorSelectDropdown:
+    testName: "Open Color Dropdown"
+    description: "Opens the custom color select overlay menu"
+    steps:
+      - step: "When I open the 'Color' dropdown"
+        fieldKey: "react_select_colorSelect"
+        intent: "action"
+        params:
+          subIntent: "open"
+
+  verifyColorSelectOptions:
+    testName: "Verify Color Dropdown Options"
+    description: "Verifies options contained inside the custom color select menu"
+    steps:
+      - step: "Then the 'Color' dropdown options should contain option"
+        fieldKey: "react_select_colorSelect"
+        intent: "verify"
+        params:
+          subIntent: "optionsContains"
+          value: "${data:option1}"
+
+  selectColorOption:
+    testName: "Select Option in Color Dropdown"
+    description: "Selects a specified option from the custom color select dropdown"
+    steps:
+      - step: "When I select an option from the 'Color' dropdown"
+        fieldKey: "react_select_colorSelect"
+        intent: "populate"
+        params:
+          value: "${data:selectedOption}"
+
+  verifyColorSelectValue:
+    testName: "Verify Selected Value in Color Dropdown"
+    description: "Verifies the current selected value of the color dropdown control"
+    steps:
+      - step: "Then the 'Color' dropdown should display the expected value"
+        fieldKey: "react_select_colorSelect"
+        intent: "verify"
+        params:
+          subIntent: "contains"
+          value: "${data:expectedValue}"
+
+  closeColorSelectDropdown:
+    testName: "Close Color Dropdown"
+    description: "Closes the custom color select menu panel"
+    steps:
+      - step: "When I close the 'Color' dropdown"
+        fieldKey: "react_select_colorSelect"
+        intent: "action"
+        params:
+          subIntent: "close"
+
+  verifyAndSelectColorCustomSelectWorkflow:
+    testName: "Verify and Select Color Workflow"
+    description: "High-level tier 2 workflow to open, verify options, populate, verify selection, and close color dropdown"
+    steps:
+      - refScenario: "navigateToPage"
+      - refScenario: "openColorSelectDropdown"
+      - refScenario: "verifyColorSelectOptions"
+        data:
+          option1: "${data:option1}"
+      - refScenario: "selectColorOption"
+        data:
+          selectedOption: "${data:selectedOption}"
+      - refScenario: "verifyColorSelectValue"
+        data:
+          expectedValue: "${data:expectedValue}"
+      - refScenario: "closeColorSelectDropdown"
+
+profiles:
+  verifyAndSelectColorCustomSelectProfile:
+    refScenario: "verifyAndSelectColorCustomSelectWorkflow"
+    description: "Profile verifying and selecting Strawberry from the Color dropdown"
+    data:
+      option1: "Orange"
+      selectedOption: "Orange"
+      expectedValue: "Orange"

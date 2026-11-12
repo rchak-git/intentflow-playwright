@@ -1,11 +1,16 @@
 // src/config/controlDefaults.ts
 import type { LocatorDefinition } from '../types/uiMapTypes';
 
-
 export interface TableStrategyDefinition {
   rowSelector: string;
   cellSelector: string;
   headerSelector: string;
+}
+
+export interface SelectStrategyDefinition {
+  defaultStrategy: 'auto' | 'visibleText' | 'value' | 'index';
+  optionSelector: string;
+  fallbackStrategies: string[];
 }
 
 export const TABLE_STRATEGY_DEFAULTS: Record<'htmlTable' | 'divGrid', TableStrategyDefinition> = {
@@ -29,8 +34,20 @@ export const SEARCH_CONTROL_DEFAULTS: Record<string, LocatorDefinition> = {
     strategy: 'css',
     selector: 'button, .clear-btn, mat-icon[aria-label*="Clear"], svg'
   },
+  searchBtn: {
+    strategy: 'css',
+    selector: 'button[type="submit"], .search-btn, mat-icon[aria-label*="Search"]'
+  },
   optionItem: {
     strategy: 'css',
     selector: 'mat-option, .autocomplete-option, .search-result-item'
   }
+};
+
+export const SELECT_CONTROL_DEFAULTS: SelectStrategyDefinition = {
+  // Primary strategy for native HTML <select> controls
+  defaultStrategy: 'auto', 
+  optionSelector: 'option',
+  // Execution fallback chain if primary fails
+  fallbackStrategies: ['visibleText', 'value', 'index']
 };

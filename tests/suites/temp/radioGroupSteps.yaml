@@ -1,0 +1,70 @@
+page: "https://practice.expandtesting.com/radio-buttons"
+description: "Suite for verifying and selecting options in a color radio group"
+uiMap: "RadioGroupUiMap"
+
+sharedScenarios:
+  navigateToRadioGroupPage:
+    testName: "Navigate to Radio Group Page"
+    description: "Navigates to the Radio Group demo page"
+    steps:
+      - step: "Navigate to Radio Group demo page"
+        fieldKey: "page"
+        intent: "action"
+        params:
+          subIntent: "navigate"
+
+  verifyColorRadioOptionsContains:
+    testName: "Verify Color Radio Options Contains Value"
+    description: "Verifies that the color radio group contains a specific option"
+    steps:
+      - step: "Verify color radio group options contain value"
+        fieldKey: "radio_colorRadioGroup"
+        intent: "verify"
+        params:
+          subIntent: "optionsContains"
+          value: "${data:expectedOption}"
+
+  selectColorRadioOption:
+    testName: "Select Color Radio Option"
+    description: "Selects a radio option in the color radio group"
+    steps:
+      - step: "Select option in color radio group"
+        fieldKey: "radio_colorRadioGroup"
+        intent: "populate"
+        params:
+          value: "${data:selectedRadio}"
+
+  verifyColorRadioSelected:
+    testName: "Verify Color Radio Option Selected"
+    description: "Verifies that a specific color radio option is selected"
+    steps:
+      - step: "Verify selected option in color radio group"
+        fieldKey: "radio_colorRadioGroup"
+        intent: "verify"
+        params:
+          subIntent: "equals"
+          value: "${data:expectedRadio}"
+
+  verifyAndSelectColorRadioGroupWorkflow:
+    testName: "Verify and Select Color Radio Group Workflow"
+    description: "Composite scenario to navigate, verify options, select, and check selection in color radio group"
+    steps:
+      - refScenario: "navigateToRadioGroupPage"
+      - refScenario: "verifyColorRadioOptionsContains"
+        data:
+          expectedOption: "${data:expectedOption}"
+      - refScenario: "selectColorRadioOption"
+        data:
+          selectedRadio: "${data:selectedRadio}"
+      - refScenario: "verifyColorRadioSelected"
+        data:
+          expectedRadio: "${data:expectedRadio}"
+
+profiles:
+  verifyAndSelectColorRadioGroupProfile:
+    refScenario: "verifyAndSelectColorRadioGroupWorkflow"
+    description: "Profile for verifying options and selecting Red in color radio group"
+    data:
+      expectedOption: "Red"
+      selectedRadio: "Red"
+      expectedRadio: "Red"

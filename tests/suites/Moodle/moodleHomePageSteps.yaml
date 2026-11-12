@@ -1,0 +1,87 @@
+page: "/my/index.php"
+description: "Moodle Home Page Suite"
+uiMap: "MoodleHomePageUiMap"
+
+includes:
+  - "moodleLoginSteps.yaml"
+
+# ---------------------------------------------------------------------------
+# SHARED SCENARIOS (Reserved for mechanics referenced by >= 2 profiles — Rule 2.2)
+# ---------------------------------------------------------------------------
+sharedScenarios:
+  openUserMenuAndSelectOption:
+    description: "Expands top-navigation user dropdown menu and clicks parameterized menu item"
+    steps:
+      - step: "Click User menu button to expand dropdown"
+        fieldKey: "moodle_hmpage_userMenuButton"
+        intent: "action"
+        params:
+          subIntent: "click"
+          waitForNetwork: true
+
+      - step: "Click target menu item link"
+        fieldKey: "${data:menuItemFieldKey}"
+        intent: "action"
+        params:
+          subIntent: "click"
+
+# ---------------------------------------------------------------------------
+# PROFILES (Public Execution Targets & Preconditions — Prefix: td_*)
+# ---------------------------------------------------------------------------
+profiles:
+  td_studentLogout:
+    description: "Execution profile: Student logging out via User Menu"
+    preconditions:
+      - refProfile: "moodleLoginSteps.td_successfulStudentLogin"
+    steps:
+      - refScenario: "openUserMenuAndSelectOption"
+        data:
+          menuItemFieldKey: "moodle_hmpage_userLogOutLink"
+
+      - step: "Verify page text contains Log in button"
+        fieldKey: "page"
+        intent: "verify"
+        params:
+          subIntent: "contains"
+          value: "${data:expectedText || 'Log in'}"
+
+      - step: "Verify site header text"
+        fieldKey: "page"
+        intent: "verify"
+        params:
+          subIntent: "contains"
+          value: "${data:headerText || 'Moodle 5.3 sandbox demo'}"
+
+  td_navigateToMyCourses:
+    description: "Data-less transition profile: Direct link navigation to My Courses page"
+    preconditions:
+      - refProfile: "moodleLoginSteps.td_successfulStudentLogin"
+    steps:
+      - step: "Click My courses navigation pill link"
+        fieldKey: "moodle_hmpage_myCoursesNavPillLink"
+        intent: "action"
+        params:
+          subIntent: "click"
+
+      - step: "Verify landing on My courses section"
+        fieldKey: "page"
+        intent: "verify"
+        params:
+          subIntent: "contains"
+          value: "${data:expectedText || 'My courses'}"
+
+  td_navigateToStudentGrades:
+    description: "Data-less transition profile: Navigates to Student Grades page via User menu"
+    preconditions:
+      - refProfile: "moodleLoginSteps.td_successfulStudentLogin"
+    steps:
+      - refScenario: "openUserMenuAndSelectOption"
+        data:
+          menuItemFieldKey: "moodle_hmpage_userGradesLink"
+
+      - step: "Verify Grades page header content"
+        fieldKey: "page"
+        intent: "verify"
+        params:
+          subIntent: "contains"
+          value: "${data:expectedText || 'Courses I am taking'}"

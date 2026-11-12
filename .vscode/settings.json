@@ -1,10 +1,10 @@
 {
   "yaml.schemas": {
     "./.vscode/intent-schema.json": [
-      "**/suites/*.yaml",
-      "**/suites/*.yml",
-      "*.intent.yml",
-      "*.intent.yaml"
+      "**/suites/**/*.yaml",
+      "**/suites/**/*.yml",
+      "**/*.intent.yml",
+      "**/*.intent.yaml"
     ]
   },
   "[yaml]": {

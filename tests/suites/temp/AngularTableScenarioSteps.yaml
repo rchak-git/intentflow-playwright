@@ -1,0 +1,43 @@
+# AngularTableScenarioSteps.yaml
+page: "https://material.angular.dev/components/table/overview"
+description: "Verify element details in Angular Material periodic table"
+uiMap: AngularTableUiMap
+
+sharedScenarios:
+  verifyPeriodicTableElementDetails:
+    testName: "Verify element details in Angular Material periodic table"
+    description: "Verifies weight and symbol cell values for specific elements in the Angular Material periodic table"
+    steps:
+      - step: "Given the user is on the Angular Material Table Overview page"
+        fieldKey: "page"
+        intent: "action"
+        params:
+          subIntent: "navigate"
+      - step: 'Then the weight for element "Lithium" should be "6.941"'
+        fieldKey: "ang_tableBasicExampleTable"
+        widgetType: "WEB_TABLE"
+        intent: "verify"
+        params:
+          subIntent: "cellText"
+          anchorText: "${data:elementName}"
+          column: "weight"
+          value: "${data:expectedWeight}"
+      - step: 'And the symbol for element position "1" should be "H"'
+        fieldKey: "ang_tableBasicExampleTable"
+        widgetType: "WEB_TABLE"
+        intent: "verify"
+        params:
+          subIntent: "cellText"
+          anchorText: "${data:elementPosition}"
+          column: "symbol"
+          value: "${data:expectedSymbol}"
+
+profiles:
+  verifyPeriodicTableElementDetailsProfile:
+    refScenario: "verifyPeriodicTableElementDetails"
+    description: "Default execution profile for verifying periodic table element details"
+    data:
+      elementName: "Lithium"
+      expectedWeight: "6.941"
+      elementPosition: "1"
+      expectedSymbol: "H"

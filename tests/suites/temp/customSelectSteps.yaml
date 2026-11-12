@@ -1,0 +1,106 @@
+page: "https://material.angular.dev/components/select/overview"
+description: "Verify and interact with state custom select control"
+uiMap: "CustomSelectUiMap"
+
+sharedScenarios:
+  openStateSelectDropdown:
+    testName: "Open State Select Dropdown"
+    description: "Opens the custom select overlay panel"
+    steps:
+      - step: "Open the state select dropdown"
+        fieldKey: "cust_select_stateSelect"
+        intent: "action"
+        params:
+          subIntent: "open"
+
+  verifyStateSelectOptions:
+    testName: "Verify State Select Options"
+    description: "Verifies options contained in the custom select overlay panel"
+    steps:
+      - step: "Verify option 1 in state select dropdown"
+        fieldKey: "cust_select_stateSelect"
+        intent: "verify"
+        params:
+          subIntent: "optionsContains"
+          value: "${data:option1}"
+      - step: "Verify option 2 in state select dropdown"
+        fieldKey: "cust_select_stateSelect"
+        intent: "verify"
+        params:
+          subIntent: "optionsContains"
+          value: "${data:option2}"
+
+  closeStateSelectDropdown:
+    testName: "Close State Select Dropdown"
+    description: "Closes the custom select overlay panel"
+    steps:
+      - step: "Close the state select dropdown"
+        fieldKey: "cust_select_stateSelect"
+        intent: "action"
+        params:
+          subIntent: "close"
+
+  selectStateOption:
+    testName: "Select State Option"
+    description: "Populates option in state custom select control"
+    steps:
+      - step: "Select option from state select dropdown"
+        fieldKey: "cust_select_stateSelect"
+        intent: "populate"
+        params:
+          value: "${data:stateName}"
+
+  verifyStateSelectDisplayText:
+    testName: "Verify State Select Display Text"
+    description: "Verifies the displayed value of state custom select control"
+    steps:
+      - step: "Verify state select dropdown displays expected text"
+        fieldKey: "cust_select_stateSelect"
+        intent: "verify"
+        params:
+          subIntent: "equals"
+          value: "${data:expectedState}"
+
+  verifyStateSelectEnabledState:
+    testName: "Verify State Select Enabled State"
+    description: "Verifies that state custom select control is enabled"
+    steps:
+      - step: "Verify state select dropdown is enabled"
+        fieldKey: "cust_select_stateSelect"
+        intent: "verify"
+        params:
+          subIntent: "state"
+          value: "enabled"
+
+  verifyAndInteractWithStateCustomSelectControl:
+    testName: "Verify and Interact with State Custom Select Control"
+    description: "Composite scenario to open, verify options, close, select option, and verify custom select control state"
+    steps:
+      - step: "Navigate to user profile page"
+        fieldKey: "page"
+        intent: "action"
+        params:
+          subIntent: "navigate"
+      - refScenario: "openStateSelectDropdown"
+      - refScenario: "verifyStateSelectOptions"
+        data:
+          option1: "${data:option1}"
+          option2: "${data:option2}"
+      - refScenario: "closeStateSelectDropdown"
+      - refScenario: "selectStateOption"
+        data:
+          stateName: "${data:stateName}"
+      - refScenario: "verifyStateSelectDisplayText"
+        data:
+          expectedState: "${data:expectedState}"
+      - refScenario: "verifyStateSelectEnabledState"
+
+profiles:
+  verifyAndInteractWithStateCustomSelectControlProfile:
+    refScenario: "verifyAndInteractWithStateCustomSelectControl"
+    description: "Profile verifying interaction with state custom select control"
+    data:
+      option1: "Texas"
+      option2: "California"
+      stateName: "Texas"
+      expectedState: "Texas"

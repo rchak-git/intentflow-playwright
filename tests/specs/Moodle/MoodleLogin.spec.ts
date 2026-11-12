@@ -1,20 +1,32 @@
-// tests/specs/Moodle/MoodleLogin.spec.ts
 import { test } from '@playwright/test';
+import * as path from 'path';
 import { CommandDispatcher } from '../../../src/engine/commandDispatcher';
 import { loadYamlSuite } from '../../../src/engine/yamlLoader';
 
-test.describe('Moodle Sandbox - Authentication & Portability Test', () => {
-  let dispatcher: CommandDispatcher;
-  let suiteSpec: any;
+// Synchronously load the YAML suite at module evaluation time
+const suitePath = path.resolve(process.cwd(), 'tests/suites/Moodle/moodleLoginSteps.yaml');
+const suite = loadYamlSuite(suitePath);
 
-  test.beforeAll(async () => {
-    suiteSpec = await loadYamlSuite('tests/suites/Moodle/moodleLoginSuite.yaml');
-    dispatcher = await CommandDispatcher.fromSuite(suiteSpec);
+test.describe('Moodle User Authentication test scenarios', () => {
+
+  test('Successful login with valid student credentials', async ({ page }) => {
+    const dispatcher = await CommandDispatcher.fromSuite(suite);
+    await dispatcher.executeProfile(page, 'td_successfulStudentLogin', suite);
   });
 
-  test('TC_MOODLE_001 - Verify Student Login on Moodle Stack', async ({ page }) => {
-    // Navigation and field interaction are managed directly by the Intent Engine
-    await dispatcher.executeProfile(page, 'validAdminLogin', suiteSpec);
-    debugger;
+  test('Successful login with valid admin credentials', async ({ page }) => {
+    const dispatcher = await CommandDispatcher.fromSuite(suite);
+    await dispatcher.executeProfile(page, 'td_successfulAdminLogin', suite);
   });
+
+  test('Unsuccessful login with invalid password', async ({ page }) => {
+    const dispatcher = await CommandDispatcher.fromSuite(suite);
+    await dispatcher.executeProfile(page, 'td_unsuccessfulLoginWithInvalidPassword', suite);
+  });
+
+  test('Guest login access', async ({ page }) => {
+    const dispatcher = await CommandDispatcher.fromSuite(suite);
+    await dispatcher.executeProfile(page, 'td_guestLogin', suite);
+  });
+
 });

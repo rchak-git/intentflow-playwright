@@ -1,0 +1,65 @@
+page: "/delivery-player/#/login"
+description: "Successfully log into MHE Delivery Player with valid credentials"
+uiMap: "MheLoginUiMap"
+
+sharedScenarios:
+  open_login_page:
+    testName: "Open MHE Login Page"
+    description: "Navigates to the MHE Delivery Player login screen"
+    steps:
+      - step: "Navigate to MHE Login page"
+        fieldKey: "page"
+        intent: "action"
+        params:
+          subIntent: "navigate"
+
+  login_with_credentials:
+    testName: "Login with Credentials"
+    description: "Populates credentials and submits login form"
+    steps:
+      - step: "Enter username"
+        fieldKey: "mhe_login_usernameTextbox"
+        intent: "populate"
+        params:
+          value: "${data:username}"
+
+      - step: "Enter password"
+        fieldKey: "mhe_login_passwordTextbox"
+        intent: "populate"
+        params:
+          value: "${data:password}"
+
+      - step: "Click login button"
+        fieldKey: "mhe_login_loginButton"
+        intent: "action"
+        params:
+          subIntent: "click"
+
+  verify_home_redirection:
+    testName: "Verify Redirection to Home Page"
+    description: "Verifies URL contains target home path"
+    steps:
+      - step: "Verify URL contains home path"
+        fieldKey: "page"
+        intent: "verify"
+        params:
+          subIntent: "urlContains"
+          value: "/delivery-player/#/login"
+
+  login:
+    testName: "Complete Login Workflow"
+    description: "Full end-to-end authentication flow"
+    steps:
+      - refScenario: "open_login_page"
+      - refScenario: "login_with_credentials"
+        data:
+          username: "${data:username}"
+          password: "${data:password}"
+      - refScenario: "verify_home_redirection"
+
+profiles:
+  default:
+    refScenario: "login"
+    data:
+      username: "admin_one"
+      password: "P@ssw0rd"

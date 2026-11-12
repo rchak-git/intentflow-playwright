@@ -1,3 +1,5 @@
+// src/engine/contextStore.ts
+
 export class ContextStore {
   private store: Map<string, unknown> = new Map();
 
@@ -30,7 +32,7 @@ export class ContextStore {
   }
 
   /**
-   * Interpolates ${context:key} placeholders inside target strings or objects.
+   * Interpolates ${context:key}, ${store:key}, or ${data:key} placeholders inside target strings or objects.
    * Example: "Order #${context:orderId}" -> "Order #CONF-8849"
    */
   public resolve<T>(target: T): T {
@@ -54,12 +56,25 @@ export class ContextStore {
   }
 
   /**
-   * Replaces ${context:key} matches inside a string.
+   * Replaces ${context:key}, ${store:key}, or ${data:key} matches inside a string.
    */
-  private resolveString(input: string): string {
-    const contextTokenRegex = /\${context:([a-zA-Z0-9_.-]+)}/g;
+  private resolveString(input: string): unknown {
+    const tokenRegex = /\$\{(?:context|store|data):([a-zA-Z0-9_.-]+)\}/g;
 
-    return input.replace(contextTokenRegex, (match, key) => {
+    // Direct return for exact match single-token strings (preserves original types like objects/booleans/numbers)
+    const exactMatch = input.trim().match(/^\$\{(?:context|store|data):([a-zA-Z0-9_.-]+)\}$/);
+    if (exactMatch) {
+      const key = exactMatch[1];
+      if (!this.has(key)) {
+        throw new Error(
+          `[ContextStore Error] Unable to resolve token "${input}". Key "${key}" was not found in the context store.`
+        );
+      }
+      return this.get(key);
+    }
+
+    // String template replacement for inline strings
+    return input.replace(tokenRegex, (match, key) => {
       if (!this.has(key)) {
         throw new Error(
           `[ContextStore Error] Unable to resolve token "${match}". Key "${key}" was not found in the context store.`

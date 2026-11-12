@@ -1,235 +1,348 @@
 {
   "$schema": "http://json-schema.org/draft-07/schema#",
-  "title": "IntentFlow Suite Specification Schema",
+  "$id": "https://intentflow.dev/schemas/intent-schema.json",
+  "title": "IntentFlow Suite Specification Schema v1.0",
+  "description": "JSON Schema governing IntentFlow DSL v1.0 YAML suite files for IDE IntelliSense and compile-time validation.",
   "type": "object",
-  "required": ["page"],
+  "required": ["uiMap"],
+  "additionalProperties": false,
   "properties": {
     "page": {
       "type": "string",
-      "description": "Target page module name (e.g., loginPage, rosterPage)"
+      "description": "AUT route URL associated with this suite (e.g., '/login/index.php')."
     },
     "description": {
       "type": "string",
-      "description": "Optional suite summary or test goal"
+      "description": "High-level summary of the suite's purpose."
     },
     "uiMap": {
-      "description": "UI Map reference path or mapping object",
       "oneOf": [
         { "type": "string" },
         {
           "type": "array",
           "items": { "type": "string" }
-        },
-        {
-          "type": "object",
-          "additionalProperties": { "type": "string" }
         }
-      ]
+      ],
+      "description": "Registered UI Map key or array of UI Map module path references."
+    },
+    "includes": {
+      "type": "array",
+      "items": { "type": "string" },
+      "description": "List of parent YAML suite files included for modular scenario inheritance."
     },
     "sharedScenarios": {
       "type": "object",
-      "description": "Reusable step scenarios keyed by scenario name",
+      "description": "Dictionary of reusable Tier 1 atomic sub-scenarios and Tier 2 composite workflows.",
       "additionalProperties": {
-        "type": "object",
-        "properties": {
-          "testName": { "type": "string" },
-          "description": { "type": "string" },
-          "refScenario": { "type": "string" },
-          "steps": {
-            "type": "array",
-            "items": { "$ref": "#/definitions/StepIntent" }
+        "oneOf": [
+          {
+            "$ref": "#/definitions/TestScenario"
           },
-          "additionalSteps": {
+          {
             "type": "array",
-            "items": { "$ref": "#/definitions/StepIntent" }
+            "items": { "$ref": "#/definitions/PipelineStep" }
           }
-        }
+        ]
       }
     },
     "profiles": {
       "type": "object",
-      "description": "Dynamic data execution profiles",
+      "description": "Named test execution profiles binding data variations to composite scenarios.",
       "additionalProperties": {
-        "type": "object",
-        "properties": {
-          "usesScenario": { "type": "string" },
-          "refScenario": { "type": "string" },
-          "scenarioFile": { "type": "string" },
-          "verifications": {
-            "type": "array",
-            "items": { "$ref": "#/definitions/StepIntent" }
-          },
-          "data": { "type": "object" }
-        }
+        "$ref": "#/definitions/TestDataProfile"
       }
     }
   },
   "definitions": {
-    "StepIntent": {
+    "Intent": {
+      "type": "string",
+      "enum": ["action", "populate", "verify", "extract", "custom", "REQUIRES_SDET_HANDOFF"],
+      "description": "Primary Canonical Verb routing the step execution."
+    },
+    "SubIntent": {
+      "type": "string",
+      "enum": [
+        "navigate",
+        "setValue",
+        "click",
+        "select",
+        "remove",
+        "toggle",
+        "append",
+        "clear",
+        "pressKey",
+        "hover",
+        "dblClick",
+        "equals",
+        "contains",
+        "state",
+        "urlContains",
+        "jsClick",
+        "cellText",
+        "count",
+        "rowCount",
+        "clickSubControl",
+        "sortColumn",
+        "tableData",
+        "allRowCheckboxesState",
+        "optionsContains",
+        "open",
+        "close"
+      ],
+      "description": "Operation or widget-specific sub-intent verb."
+    },
+    "WidgetType": {
+      "type": "string",
+      "enum": [
+        "WEB_TABLE",
+        "TEXTBOX",
+        "BUTTON",
+        "DROPDOWN",
+        "CHECKBOX",
+        "RADIO_GROUP",
+        "SELECT",
+        "CUSTOM_SELECT",
+        "CONTAINER",
+        "CARD"
+      ],
+      "description": "Optional widget classification for capability enforcement."
+    },
+    "StateValue": {
+      "type": "string",
+      "enum": ["visible", "hidden", "enabled", "disabled"],
+      "description": "Allowed UI element verification states."
+    },
+    "Scalar": {
+      "oneOf": [
+        { "type": "string" },
+        { "type": "boolean" },
+        { "type": "number" }
+      ]
+    },
+    "StepParams": {
       "type": "object",
+      "additionalProperties": false,
       "properties": {
-        "step": {
-          "type": "string",
-          "description": "Step description or label"
-        },
-        "fieldKey": {
-          "type": "string",
-          "description": "Target element identifier in UI map"
-        },
-        "intent": {
-          "type": "string",
-          "enum": [
-            "navigate",
-            "populate",
-            "click",
-            "action",
-            "verify",
-            "include",
-            "custom"
-          ],
-          "description": "Core action category"
-        },
-        "actionType": {
-          "type": "string",
-          "enum": [
-            "POPULATE",
-            "CLICK",
-            "SELECT",
-            "CHECK",
-            "HOVER",
-            "CUSTOM_SCRIPT",
-            "CUSTOM_HANDLER"
-          ],
-          "description": "Action execution type"
-        },
-        "widgetType": {
-          "type": "string",
-          "enum": [
-            "TEXTBOX",
-            "BUTTON",
-            "CHECKBOX",
-            "DROPDOWN",
-            "LABEL",
-            "LINK",
-            "CONTAINER",
-            "REGION",
-            "DUAL_LISTBOX",
-            "WEB_TABLE",
-            "SEARCH",
-            "SEARCH_CONTROL",
-            "PAGE",
-            "COURSE_CARD",
-            "GENERIC"
-          ],
-          "description": "UI control widget classification"
-        },
-        "subAction": {
-          "type": "string",
-          "description": "Widget-specific sub-action"
+        "subIntent": {
+          "$ref": "#/definitions/SubIntent"
         },
         "value": {
           "oneOf": [
-            { "type": "string" },
-            { "type": "boolean" },
+            { "$ref": "#/definitions/Scalar" },
             {
               "type": "array",
-              "items": { "type": "string" }
+              "items": { "$ref": "#/definitions/Scalar" }
             }
           ],
-          "description": "Input value or expected assertion value"
+          "description": "Input text, key name, boolean flag, array of choices, or expected assertion value."
         },
-        "params": {
-          "type": "object",
-          "description": "Additional action parameters",
-          "properties": {
-            "timeout": {
-              "type": "number",
-              "description": "Custom element wait or action timeout in ms"
-            },
-            "pressEnter": {
-              "type": "boolean",
-              "description": "Press 'Enter' key after populating value"
-            },
-            "selectOption": {
-              "type": "string",
-              "description": "Option text to click from autocomplete dropdown"
-            },
-            "subAction": {
-              "type": "string",
-              "enum": ["clear", "search"]
-            },
-            "force": {
-              "type": "boolean",
-              "description": "Bypass Playwright actionability checks"
-            },
-            "rowByText": {
-              "type": "string",
-              "description": "Text value to locate target row in a Web Table"
-            },
-            "columnHeader": {
-              "type": "string",
-              "description": "Column header name to identify target cell"
-            },
-            "column": {
-              "oneOf": [{ "type": "string" }, { "type": "number" }],
-              "description": "Column index or header key"
-            }
-          }
-        },
-        "handlerName": {
+        "anchorText": {
           "type": "string",
-          "description": "Custom handler function key"
+          "description": "Row identifier or card anchor text for table and container targeting."
         },
-        "script": {
+        "column": {
           "type": "string",
-          "description": "Inline evaluation script"
+          "description": "Target column key as defined in WebTableUiMapEntry."
         },
-        "assertion": {
+        "targetColumn": {
           "type": "string",
-          "enum": [
-            "VISIBLE",
-            "NOT_VISIBLE",
-            "TEXT_EQUALS",
-            "CONTAIN_TEXT",
-            "ENABLED",
-            "DISABLED",
-            "EMPTY"
-          ],
-          "description": "Verification state check"
+          "description": "Alternative alias for target column key."
+        },
+        "childWidget": {
+          "type": "string",
+          "description": "Sub-selector key for composite controls."
+        },
+        "handler": {
+          "type": "string",
+          "description": "Name of custom handler function when intent='custom'."
+        },
+        "timeout": {
+          "type": "number",
+          "description": "Action/verification polling timeout in milliseconds."
+        },
+        "force": {
+          "type": "boolean",
+          "description": "Bypass Playwright actionability checks during click/action."
+        },
+        "waitForNetwork": {
+          "type": "boolean",
+          "description": "Wait for network idle after executing step action."
         },
         "storeAs": {
           "type": "string",
-          "description": "Dynamic context variable name to save value"
+          "description": "Key name to persist extracted value into runtime context store."
         },
-        "refProfile": {
+        "reason": {
           "type": "string",
-          "description": "Reference to an included profile key"
+          "description": "SDET handoff reason code (e.g., UNSUPPORTED_CONTROL_OPERATION)."
         },
-        "profile": {
+        "description": {
           "type": "string",
-          "description": "Alias reference to an included profile key"
+          "description": "Human-readable handoff context explanation."
+        },
+        "missingCapability": {
+          "type": "string",
+          "description": "Suggested missing subIntent or framework capability."
+        },
+        "metadata": {
+          "type": "object",
+          "additionalProperties": true,
+          "description": "Arbitrary contextual key-value pairs."
+        }
+      }
+    },
+    "StandardStep": {
+      "type": "object",
+      "required": ["fieldKey", "intent"],
+      "additionalProperties": false,
+      "properties": {
+        "step": {
+          "type": "string",
+          "description": "Human-readable step annotation (e.g., Gherkin text)."
+        },
+        "fieldKey": {
+          "type": "string",
+          "description": "UI Map entry key targeting the web control."
+        },
+        "widgetType": {
+          "$ref": "#/definitions/WidgetType"
+        },
+        "intent": {
+          "$ref": "#/definitions/Intent"
+        },
+        "params": {
+          "$ref": "#/definitions/StepParams"
+        }
+      }
+    },
+    "SdetHandoffStep": {
+      "type": "object",
+      "required": ["fieldKey", "intent"],
+      "additionalProperties": false,
+      "properties": {
+        "step": {
+          "type": "string",
+          "description": "Human-readable step annotation."
+        },
+        "fieldKey": {
+          "type": "string",
+          "description": "UI Map entry key targeting the unsupported control."
+        },
+        "intent": {
+          "type": "string",
+          "enum": ["REQUIRES_SDET_HANDOFF"]
+        },
+        "params": {
+          "$ref": "#/definitions/StepParams"
+        }
+      }
+    },
+    "RefScenarioStep": {
+      "type": "object",
+      "required": ["refScenario"],
+      "additionalProperties": false,
+      "properties": {
+        "step": {
+          "type": "string",
+          "description": "Human-readable step annotation."
         },
         "refScenario": {
           "type": "string",
-          "description": "Target shared scenario key for include steps"
-        },
-        "scenario": {
-          "type": "string",
-          "description": "Target shared scenario key for include steps"
+          "description": "Path or local key referencing a shared scenario."
         },
         "data": {
           "type": "object",
-          "description": "Inline key-value dataset map for scenario inclusion"
-        },
-        "dataId": {
-          "type": "string",
-          "description": "Data profile record key"
-        },
-        "url": {
-          "type": "string",
-          "description": "Target page URL for navigate intent"
+          "additionalProperties": true,
+          "description": "Parameter forwarding variable map for sub-scenario invocation."
         }
       }
+    },
+    "RefProfilePrecondition": {
+      "type": "object",
+      "required": ["refProfile"],
+      "additionalProperties": false,
+      "properties": {
+        "step": {
+          "type": "string",
+          "description": "Human-readable precondition description."
+        },
+        "refProfile": {
+          "type": "string",
+          "description": "Referenced target profile key executed as a precondition."
+        },
+        "data": {
+          "type": "object",
+          "additionalProperties": true,
+          "description": "Scoped data overrides for referenced precondition profile."
+        }
+      }
+    },
+    "PipelineStep": {
+      "oneOf": [
+        { "$ref": "#/definitions/StandardStep" },
+        { "$ref": "#/definitions/SdetHandoffStep" },
+        { "$ref": "#/definitions/RefScenarioStep" }
+      ]
+    },
+    "TestScenario": {
+      "type": "object",
+      "required": ["steps"],
+      "additionalProperties": false,
+      "properties": {
+        "testName": {
+          "type": "string"
+        },
+        "description": {
+          "type": "string"
+        },
+        "steps": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/PipelineStep"
+          }
+        }
+      }
+    },
+    "TestDataProfile": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "description": {
+          "type": "string"
+        },
+        "preconditions": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/RefProfilePrecondition"
+          },
+          "description": "Top-level precondition profiles (Rule 2.5)"
+        },
+        "refScenario": {
+          "type": "string",
+          "description": "Shared scenario key executed by this profile."
+        },
+        "refProfile": {
+          "type": "string",
+          "description": "Referenced target profile key executed by this profile."
+        },
+        "steps": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/PipelineStep"
+          },
+          "description": "Inline step sequence executed directly by single-use profile (Rule 2.2)."
+        },
+        "data": {
+          "type": "object",
+          "additionalProperties": true,
+          "description": "Execution dataset bound to scenario parameters."
+        }
+      },
+      "anyOf": [
+        { "required": ["refScenario"] },
+        { "required": ["refProfile"] },
+        { "required": ["steps"] }
+      ]
     }
   }
 }

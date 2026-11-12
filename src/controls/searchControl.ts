@@ -1,16 +1,10 @@
 // src/controls/searchControl.ts
 import type { Page, Locator } from '@playwright/test';
+import { expect } from '@playwright/test';
 import { BaseControl } from './baseControl';
 import type { LocatorDefinition, UiMapEntry } from '../types/uiMapTypes';
 import { SEARCH_CONTROL_DEFAULTS } from '../config/controlDefaults';
-import { Assertion, ActionParams } from '../types/intentSchema';
-
-// Extend ActionParams so SearchControl accepts framework params (e.g. timeout, force)
-export interface SearchControlParams extends ActionParams {
-  subAction?: 'search' | 'clear';
-  pressEnter?: boolean;
-  selectOption?: string;
-}
+import type { StepParams, SubIntent, Scalar } from '../types/intentSchema';
 
 export class SearchControl extends BaseControl {
   private subLocators: Record<string, LocatorDefinition | undefined>;
@@ -18,7 +12,7 @@ export class SearchControl extends BaseControl {
   constructor(
     page: Page, 
     uiEntry: UiMapEntry, 
-    params?: ActionParams,
+    params?: StepParams,
     subLocators?: Record<string, LocatorDefinition | undefined>
   ) {
     super(page, uiEntry, params);
@@ -35,88 +29,128 @@ export class SearchControl extends BaseControl {
     };
   }
 
-  public async populate(value: string, params?: SearchControlParams): Promise<void> {
+  /**
+   * Populates search box and optionally selects an autocomplete option.
+   */
+  public override async populate(value?: Scalar | Scalar[], params?: StepParams): Promise<void> {
     if (params) this.setParams(params);
-    const timeout = params?.timeout ?? 10000;
 
-    await this.locator.waitFor({ state: 'visible', timeout });
-    await this.locator.fill(value);
+    const targetParams = params || this.params;
+    const textToSearch = String(value !== undefined ? value : targetParams?.value ?? '');
+    const optionText = targetParams?.anchorText || targetParams?.childWidget;
 
-    if (params?.pressEnter) {
-      await this.locator.press('Enter');
-    }
+    await this.executeWithRetry(async () => {
+      // 1. Fill search box input
+      await this.locator.waitFor({ state: 'visible', timeout: targetParams?.timeout ?? 10000 });
+      await this.locator.fill(textToSearch, { timeout: targetParams?.timeout });
 
-    if (params?.selectOption) {
-      const optionDef = this.subLocators.optionItem;
-      const optionSelector = typeof optionDef === 'object' && 'selector' in optionDef 
-        ? optionDef.selector 
-        : 'mat-option, .autocomplete-option, .search-result-item';
+      // 2. Select dropdown option if anchorText or childWidget is passed
+      if (optionText) {
+        const optionDef = this.subLocators.optionItem;
+        const optionSelector = typeof optionDef === 'object' && 'selector' in optionDef 
+          ? optionDef.selector 
+          : 'mat-option, .autocomplete-option, .search-result-item';
 
-      const optionLocator = this.page
-        .locator(optionSelector)
-        .filter({ hasText: params.selectOption })
-        .first();
+        const optionLocator = this.page
+          .locator(optionSelector)
+          .filter({ hasText: optionText })
+          .first();
 
-      await optionLocator.waitFor({ state: 'visible', timeout: params?.timeout ?? 5000 });
-      await optionLocator.click({ force: params?.force });
-    }
+        await optionLocator.waitFor({ state: 'visible', timeout: targetParams?.timeout ?? 5000 });
+        await optionLocator.click({ force: targetParams?.force });
+      }
+    });
   }
 
-  public async action(params?: SearchControlParams): Promise<void> {
+  /**
+   * Handles search action directives (subIntent: 'clear', 'click', or 'pressKey').
+   */
+  public override async action(params?: StepParams): Promise<void> {
     if (params) this.setParams(params);
-    const subAction = params?.subAction || 'clear';
 
-    if (subAction === 'search') {
-      const searchDef = this.subLocators.searchBtn;
-      const searchSelector = typeof searchDef === 'object' && 'selector' in searchDef
-        ? searchDef.selector
-        : 'button[type="submit"], .search-btn, mat-icon[aria-label*="Search"]';
+    const targetParams = params || this.params;
+    const subIntent: SubIntent = targetParams?.subIntent || 'click';
 
-      const searchBtn = this.locator
-        .locator('..')
-        .locator(searchSelector)
-        .first();
+    await this.executeWithRetry(async () => {
+      if (subIntent === 'clear') {
+        const clearDef = this.subLocators.clearBtn;
+        const clearSelector = typeof clearDef === 'object' && 'selector' in clearDef
+          ? clearDef.selector
+          : 'button, .clear-btn, mat-icon[aria-label*="Clear"], svg';
 
-      await searchBtn.click({ timeout: params?.timeout, force: params?.force });
-      return;
-    }
+        const clearBtn = this.locator
+          .locator('..')
+          .locator(clearSelector)
+          .first();
 
-    if (subAction === 'clear') {
-      const clearDef = this.subLocators.clearBtn;
-      const clearSelector = typeof clearDef === 'object' && 'selector' in clearDef
-        ? clearDef.selector
-        : 'button, .clear-btn, mat-icon[aria-label*="Clear"], svg';
-
-      const clearBtn = this.locator
-        .locator('..')
-        .locator(clearSelector)
-        .first();
-
-      if (await clearBtn.isVisible().catch(() => false)) {
-        await clearBtn.click({ timeout: params?.timeout, force: params?.force });
-      } else {
-        await this.locator.fill('');
+        if (await clearBtn.isVisible().catch(() => false)) {
+          await clearBtn.click({ timeout: targetParams?.timeout, force: targetParams?.force });
+        } else {
+          await this.locator.fill('');
+        }
+        return;
       }
-    }
+
+      if (subIntent === 'click') {
+        const searchDef = this.subLocators.searchBtn;
+        const searchSelector = typeof searchDef === 'object' && 'selector' in searchDef
+          ? searchDef.selector
+          : 'button[type="submit"], .search-btn, mat-icon[aria-label*="Search"]';
+
+        const searchBtn = this.locator
+          .locator('..')
+          .locator(searchSelector)
+          .first();
+
+        if (await searchBtn.isVisible().catch(() => false)) {
+          await searchBtn.click({ timeout: targetParams?.timeout, force: targetParams?.force });
+        } else {
+          await this.locator.press('Enter');
+        }
+        return;
+      }
+
+      // Default back to base action for generic key presses or hovers
+      await super.action(targetParams);
+    });
   }
 
-  public override async verify(assertion?: Assertion | string, expectedValue?: string): Promise<void> {
-    if (assertion === 'TEXT_EQUALS' || assertion === 'VALUE_EQUALS') {
-      const actualValue = await this.locator.inputValue();
-      if (actualValue !== expectedValue) {
-        throw new Error(`[SearchControl] Expected input value "${expectedValue}", but found "${actualValue}"`);
-      }
+  /**
+   * Extracts current input value.
+   */
+  public override async getValue(): Promise<string> {
+    return (await this.locator.inputValue()).trim();
+  }
+
+  /**
+   * Overrides verify to validate search input content.
+   */
+  public override async verify(
+    subIntent: SubIntent = 'equals',
+    expectedValue?: Scalar | Scalar[],
+    params?: StepParams
+  ): Promise<void> {
+    if (params) this.setParams(params);
+
+    const targetSubIntent = params?.subIntent || subIntent;
+    const rawVal = params?.value !== undefined ? params.value : expectedValue;
+
+    if (targetSubIntent === 'state') {
+      await super.verify(subIntent, expectedValue, params);
       return;
     }
 
-    if (assertion === 'EMPTY') {
-      const actualValue = await this.locator.inputValue();
-      if (actualValue.trim() !== '') {
-        throw new Error(`[SearchControl] Expected search box to be empty, but found "${actualValue}"`);
-      }
-      return;
-    }
+    const valStr = rawVal !== undefined ? String(rawVal) : '';
 
-    await super.verify(assertion as any, expectedValue);
+    switch (targetSubIntent) {
+      case 'contains':
+        await expect(this.locator).toHaveValue(new RegExp(valStr));
+        break;
+
+      case 'equals':
+      default:
+        await expect(this.locator).toHaveValue(valStr);
+        break;
+    }
   }
 }

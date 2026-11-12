@@ -1,175 +1,249 @@
 // src/types/intentSchema.ts
 import { z } from 'zod';
 
-export const INTENTS = [
-  'navigate',
-  'populate',
-  'click',
-  'action',
-  'verify',
-  'include',
-  'custom',
-] as const;
-
-export const ACTION_TYPES = [
-  'POPULATE',
-  'CLICK',
-  'SELECT',
-  'CHECK',
-  'HOVER',
-  'CUSTOM_SCRIPT',
-  'CUSTOM_HANDLER',
-] as const;
-
-export const ASSERTIONS = [
-  'VISIBLE',
-  'NOT_VISIBLE',
-  'TEXT_EQUALS',
-  'CONTAIN_TEXT',
-  'ENABLED',
-  'DISABLED',
-  'EMPTY',
-] as const;
-
+// Primary Canonical Verbs (Strict Top-Level Polymorphic Routing)
+export const INTENTS = ['action', 'populate', 'verify', 'extract', 'custom', 'REQUIRES_SDET_HANDOFF'] as const;
 export const IntentSchema = z.enum(INTENTS);
-export const ActionTypeSchema = z.enum(ACTION_TYPES);
-export const AssertionSchema = z.enum(ASSERTIONS);
 
-// Element-level action parameters schema for VS Code IntelliSense & Web Table support
-export const ActionParamsSchema = z
+// Allowed Sub-Intents for WEB_TABLE controls
+export const WEB_TABLE_SUB_INTENTS = [
+  'cellText',
+  'contains',
+  'rowCount',
+  'count',
+  'clickSubControl',
+  'sortColumn',
+  'tableData',
+  'allRowCheckboxesState'
+] as const;
+export const WebTableSubIntentSchema = z.enum(WEB_TABLE_SUB_INTENTS);
+
+// Minimal Sub-Intent Vocabulary
+export const SUB_INTENTS = [
+  'navigate',
+  'setValue',
+  'click',
+  'select',
+  'remove',
+  'toggle',
+  'append',
+  'clear',
+  'pressKey',
+  'hover',
+  'dblClick',
+  'equals',
+  'contains',
+  'state',
+  'urlContains',
+  'jsClick',
+  'cellText',
+  'count',
+  'rowCount',
+  'clickSubControl',
+  'sortColumn',
+  'tableData',
+  'allRowCheckboxesState',
+  'optionsContains',
+  'open',
+  'close'
+] as const;
+
+export const SubIntentSchema = z.enum(SUB_INTENTS);
+
+// Allowed UI Element States
+export const STATE_VALUES = ['visible', 'hidden', 'enabled', 'disabled'] as const;
+export const StateValueSchema = z.enum(STATE_VALUES);
+export type StateValue = z.infer<typeof StateValueSchema>;
+
+// Primitive Scalar Definition
+export const ScalarSchema = z.union([z.string(), z.boolean(), z.number()]);
+
+/**
+ * Preprocesses raw YAML inputs ('checked', 'true', 'selected', '1', 'unchecked', 'false', '0')
+ * into a strict native boolean flag.
+ */
+export const BooleanStateSchema = z.preprocess(
+  (val) => {
+    if (typeof val === 'boolean') return val;
+    if (typeof val === 'string') {
+      const normalized = val.trim().toLowerCase();
+      if (['checked', 'true', 'selected', 'enabled', '1'].includes(normalized)) return true;
+      if (['unchecked', 'false', 'deselected', 'disabled', '0'].includes(normalized)) return false;
+    }
+    return val;
+  },
+  z.boolean({ message: "Expected boolean or state string ('checked' | 'unchecked' | 'true' | 'false')" })
+);
+
+export type BooleanState = z.infer<typeof BooleanStateSchema>;
+
+// Encapsulated Parameters Schema
+export const StepParamsSchema = z
   .object({
-    timeout: z.number().describe("Custom element wait or action timeout in milliseconds").optional(),
-    pressEnter: z.boolean().describe("Press 'Enter' key after populating value").optional(),
-    selectOption: z.string().describe("Option text to click from autocomplete dropdown").optional(),
-    subAction: z.enum(['clear', 'search']).describe("Control sub-action type").optional(),
-    force: z.boolean().describe("Bypass Playwright actionability checks").optional(),
-    
-    // --- Standardized Component Parameters (Design Lock) ---
-    matchText: z.string().describe("Universal container anchor string (e.g., card title or row text)").optional(),
-    subTarget: z.string().describe("Key mapping to a child element selector defined in subSelectors").optional(),
-
-    // --- Web Table & Dynamic Action Parameters ---
-    rowByText: z.string().describe("Text value to locate the target row in a Web Table (Legacy alias for matchText)").optional(),
-    rowIndex: z.number().describe("Zero-based index for table row targeting").optional(),
-    columnHeader: z.string().describe("Column header name to identify target cell").optional(),
-    columnIndex: z.number().describe("Zero-based index for table column targeting").optional(),
-    column: z.union([z.string(), z.number()]).describe("Column index or header key").optional(),
-    subSelector: z.string().describe("Raw sub-selector string override").optional(),
-  })
-  .refine(
-    (data: Record<string, any>) => !('rowMatch' in data),
-    { message: "Deprecated parameter 'rowMatch' detected in YAML. Please use 'matchText' (or 'rowByText') instead." }
-  )
-  .passthrough(); // Allows custom control overrides
-
-
-export const StepIntentSchema = z
-  .object({
-    step: z.string().describe("Step description or label").optional(),
-    fieldKey: z.string().describe("Target element identifier in UI map").optional(),
-    intent: IntentSchema.describe("Core action category"),
-    actionType: ActionTypeSchema.describe("Action execution type").optional(),
-    widgetType: z
-      .enum([
-        'TEXTBOX',
-        'BUTTON',
-        'CHECKBOX',
-        'DROPDOWN',
-        'LABEL',
-        'LINK',
-        'CONTAINER',
-        'REGION',
-        'DUAL_LISTBOX',
-        'WEB_TABLE',
-        'SEARCH',
-        'SEARCH_CONTROL',
-        'PAGE',
-        'COURSE_CARD',
-        'GENERIC',
-      ])
-      .describe("UI control widget classification")
-      .optional(),
-    subAction: z.string().describe("Widget-specific sub-action").optional(),
+    subIntent: SubIntentSchema.describe("Widget or operation specific sub-intent verb").optional(),
     value: z
-      .union([z.string(), z.boolean(), z.array(z.string())])
-      .describe("Input value or expected assertion value")
+      .union([ScalarSchema, z.array(ScalarSchema)])
+      .describe("Input text, key name, boolean flag, array of choices, or expected assertion value(s)")
       .optional(),
-    params: ActionParamsSchema.describe("Additional action parameters").optional(),
-    handlerName: z.string().describe("Custom handler function key").optional(),
-    script: z.string().describe("Inline evaluation script").optional(),
-    assertion: AssertionSchema.describe("Verification state check").optional(),
-    storeAs: z.string().describe("Dynamic context variable name to save value").optional(),
-    
-    // --- Composition / Chaining Keys ---
-    refProfile: z.string().describe("Reference to an included profile key").optional(),
-    profile: z.string().describe("Alias reference to an included profile key").optional(),
-    refScenario: z.string().describe("Target shared scenario key for include steps").optional(),
-    scenario: z.string().describe("Alias reference to a shared scenario key").optional(),
-    
-    data: z.record(z.string(), z.any()).describe("Inline key-value pair dataset scoped directly to this step").optional(),
-    dataId: z.string().describe("Data profile record key").optional(),
-    url: z.string().describe("Target page URL for navigate intent").optional(),
-  })
-  .passthrough(); // Guarantees step properties are NEVER stripped during parsing
-
-// Backward compatibility alias
-export const StepSchema = StepIntentSchema;
-
-export const TestScenarioSchema = z
-  .object({
-    testName: z.string().optional(),
+    anchorText: z.string().optional(),
+    column: z.string().optional(),
+    targetColumn: z.string().optional(),
+    childWidget: z.string().optional(),
+    handler: z.string().optional(),
+    timeout: z.number().optional(),
+    force: z.boolean().optional(),
+    waitForNetwork: z.boolean().optional(),
+    storeAs: z.string().optional(),
+    reason: z.string().optional(),
     description: z.string().optional(),
-    refScenario: z.string().optional(),
-    steps: z.array(StepIntentSchema).optional(),
-    additionalSteps: z.array(StepIntentSchema).optional(),
+    missingCapability: z.string().optional(),
+    metadata: z.record(z.string(), z.unknown()).optional(),
   })
+  .strict()
   .refine(
-    (data) => data.steps !== undefined || data.refScenario !== undefined,
-    { message: "A scenario must provide either 'steps' or a 'refScenario' reference." }
-  )
-  .passthrough();
+    (data) => {
+      if (data.subIntent === 'state' && data.value !== undefined) {
+        const valStr = String(data.value).toLowerCase();
+        return (STATE_VALUES as readonly string[]).includes(valStr);
+      }
+      return true;
+    },
+    {
+      message: `Invalid state value for subIntent 'state'. Allowed values are: ${STATE_VALUES.join(', ')}`,
+      path: ['value'],
+    }
+  );
 
-// Dynamic Test Data Profile Schema
-export const TestDataProfileSchema = z
-  .object({
-    usesScenario: z.string({ message: "'usesScenario' is required for every profile" }).optional(),
-    refScenario: z.string().optional(),
-    scenarioFile: z.string().optional(),
-    verifications: z.array(StepIntentSchema).optional(),
-    data: z.record(z.string(), z.any()).optional(),
-  })
-  .passthrough()
-  .catchall(z.unknown());
+export const CheckboxStateParamsSchema = StepParamsSchema.extend({
+  targetState: BooleanStateSchema.default(true),
+});
+export type CheckboxStateParams = z.infer<typeof CheckboxStateParamsSchema>;
 
-// Single-File Consolidated Suite Specification Schema
-export const SuiteSpecSchema = z
-  .object({
-    page: z.string({ message: "'page' is required in suite header" }),
-    description: z.string().optional(),
-    includes: z.array(z.string()).optional(),
-    uiMap: z
-      .union([
-        z.string(),
-        z.array(z.string()),
-        z.record(z.string(), z.string()),
-      ])
-      .optional(), // Optional for Global UI Map fallback
-    sharedScenarios: z.record(z.string(), TestScenarioSchema).optional(),
-    profiles: z.record(z.string(), TestDataProfileSchema).optional(),
-  })
-  .passthrough();
+// 1. Standard Step Definition
+export const StandardStepSchema = z.object({
+  step: z.string().optional(),
+  fieldKey: z.string({ message: "'fieldKey' is required for standard steps" }),
+  widgetType: z.enum([
+    "WEB_TABLE", 
+    "TEXTBOX", 
+    "BUTTON", 
+    "DROPDOWN", 
+    "CHECKBOX", 
+    "RADIO_GROUP",
+    "SELECT", 
+    "CUSTOM_SELECT", 
+    "CONTAINER", 
+    "CARD"
+  ]).optional(),
+  intent: IntentSchema,
+  params: StepParamsSchema.optional(),
+}).refine(
+  (data) => {
+    if (data.widgetType === 'WEB_TABLE' && data.intent !== 'REQUIRES_SDET_HANDOFF' && data.params?.subIntent) {
+      return (WEB_TABLE_SUB_INTENTS as readonly string[]).includes(data.params.subIntent);
+    }
+    return true;
+  },
+  {
+    message: "[IntentFlow Guardrail] Unsupported subIntent for WEB_TABLE. Flag step for SDET handoff.",
+    path: ['params', 'subIntent'],
+  }
+);
 
-// Map of profile names to dynamic profiles
-export const TestDataFileSchema = z.record(z.string(), TestDataProfileSchema);
+// 2. SDET Handoff Step Definition
+export const SdetHandoffStepSchema = z.object({
+  step: z.string().optional(),
+  fieldKey: z.string({ message: "'fieldKey' is required for handoff step" }),
+  intent: z.literal('REQUIRES_SDET_HANDOFF'),
+  params: StepParamsSchema.optional(),
+});
 
-// Exported TypeScript Types
+// 3. RefScenario Step Definition
+export const RefScenarioStepSchema = z.object({
+  step: z.string().optional(),
+  refScenario: z.string({ message: "'refScenario' path key is required" }),
+  data: z.record(z.string(), z.unknown()).optional().describe("Parameter forwarding variable map"),
+});
+
+// 4. RefProfile Precondition Item Schema (Rule 2.3 & Rule 2.5)
+export const RefProfilePreconditionSchema = z.object({
+  step: z.string().optional(),
+  refProfile: z.string({ message: "'refProfile' key is required in preconditions" }),
+  data: z.record(z.string(), z.unknown()).optional().describe("Local data overrides for referenced precondition profile"),
+});
+
+// Discriminated Polymorphic Pipeline Step Schema
+export const PipelineStepSchema = z.union([
+  StandardStepSchema, 
+  SdetHandoffStepSchema,
+  RefScenarioStepSchema,
+  RefProfilePreconditionSchema // Restored for backwards compatibility during resolution
+]);
+export const IntentStepSchema = PipelineStepSchema;
+
+// Scenario Contract
+export const TestScenarioSchema = z.object({
+  testName: z.string().optional(),
+  description: z.string().optional(),
+  steps: z.array(PipelineStepSchema),
+});
+
+/**
+ * Path 2 Dynamic Profile Contract (Rule 2.2, 2.3, 2.5, 2.6)
+ */
+export const TestDataProfileSchema = z.object({
+  description: z.string().optional(),
+  preconditions: z.array(RefProfilePreconditionSchema).optional().describe("Top-level precondition profiles (Rule 2.5)"),
+  refScenario: z.string().optional(),
+  refProfile: z.string().optional().describe("Legacy profile reference for backward compatibility"),
+  steps: z.array(PipelineStepSchema).optional().describe("Inline step sequence executed directly by single-use profile (Rule 2.2)"),
+  data: z.record(z.string(), z.unknown()).optional(),
+}).refine(
+  (data) => Boolean((data.steps && data.steps.length > 0) || data.refScenario || data.refProfile),
+  { message: "Path 2 Profile must define either an inline 'steps' array, 'refScenario', or 'refProfile'." }
+);
+
+// Root Suite Specification Contract
+export const SuiteSpecSchema = z.object({
+  page: z.string({ message: "'page' is required in suite header" }).optional(),
+  description: z.string().optional(),
+  uiMap: z.union([z.string(), z.array(z.string())]).describe("UI Map file path reference or registry key"),
+  includes: z.array(z.string()).optional().describe("Parent YAML suite files for modular inheritance"),
+  sharedScenarios: z.record(z.string(), z.union([z.array(PipelineStepSchema), TestScenarioSchema])).optional(),
+  profiles: z.record(z.string(), TestDataProfileSchema).optional(),
+});
+
+export const VerifyIntentStepSchema = z.object({
+  step: z.string().optional(),
+  fieldKey: z.string({ message: "'fieldKey' is required for verify steps" }),
+  intent: z.literal('verify'),
+  params: StepParamsSchema.refine(
+    (data) => {
+      if (data?.subIntent === 'cellText') {
+        const col = data.column || data.targetColumn;
+        return Boolean(data.anchorText && col);
+      }
+      return true;
+    },
+    {
+      message:
+        "[IntentFlow Design Lock] Table subIntent 'cellText' requires both 'anchorText' (row key) and 'column' key."
+    }
+  ).optional()
+});
+
+// TypeScript Types
 export type Intent = z.infer<typeof IntentSchema>;
-export type ActionType = z.infer<typeof ActionTypeSchema>;
-export type Assertion = z.infer<typeof AssertionSchema>;
-export type ActionParams = z.infer<typeof ActionParamsSchema>;
-export type StepIntent = z.infer<typeof StepIntentSchema>;
-export type Step = StepIntent; // Type alias
+export type SubIntent = z.infer<typeof SubIntentSchema>;
+export type Scalar = z.infer<typeof ScalarSchema>;
+export type StepParams = z.infer<typeof StepParamsSchema>;
+export type StandardStep = z.infer<typeof StandardStepSchema>;
+export type SdetHandoffStep = z.infer<typeof SdetHandoffStepSchema>;
+export type RefScenarioStep = z.infer<typeof RefScenarioStepSchema>;
+export type RefProfilePrecondition = z.infer<typeof RefProfilePreconditionSchema>;
+export type RefProfileStep = RefProfilePrecondition; // Backwards compatibility alias
+export type PipelineStep = z.infer<typeof PipelineStepSchema>;
+export type IntentStep = PipelineStep;
 export type TestScenario = z.infer<typeof TestScenarioSchema>;
 export type TestDataProfile = z.infer<typeof TestDataProfileSchema>;
-export type TestDataFile = z.infer<typeof TestDataFileSchema>;
 export type SuiteSpec = z.infer<typeof SuiteSpecSchema>;

@@ -1,0 +1,47 @@
+page: "https://www.ag-grid.com/javascript-data-grid/"
+description: "Verify vehicle details in AG Grid div-based table"
+uiMap: "AgGridTableUiMap"
+
+sharedScenarios:
+  verifyVehicleDetailsInAgGridTable:
+    testName: "Verify vehicle details in AG Grid div-based table"
+    description: "Verifies model and price values for specified vehicle makes in an AG Grid data table"
+    steps:
+      - step: 'Then the model for vehicle make "Tesla" should be "Model Y"'
+        fieldKey: "aggrid_table"
+        widgetType: "WEB_TABLE"
+        intent: "verify"
+        params:
+          subIntent: "cellText"
+          anchorText: "${data:teslaMake}"
+          column: "model"
+          value: "${data:expectedTeslaModel}"
+      - step: 'And the price for vehicle make "Tesla" should be "64950"'
+        fieldKey: "aggrid_table"
+        widgetType: "WEB_TABLE"
+        intent: "verify"
+        params:
+          subIntent: "cellText"
+          anchorText: "${data:teslaMake}"
+          column: "price"
+          value: "${data:expectedTeslaPrice}"
+      - step: 'And the model for vehicle make "Ford" should be "F-Series"'
+        fieldKey: "aggrid_table"
+        widgetType: "WEB_TABLE"
+        intent: "verify"
+        params:
+          subIntent: "cellText"
+          anchorText: "${data:fordMake}"
+          column: "model"
+          value: "${data:expectedFordModel}"
+
+profiles:
+  verifyVehicleDetailsInAgGridTableProfile:
+    refScenario: "verifyVehicleDetailsInAgGridTable"
+    description: "Default execution profile for verifying AG Grid vehicle details"
+    data:
+      teslaMake: "Tesla"
+      expectedTeslaModel: "Model Y"
+      expectedTeslaPrice: "64950"
+      fordMake: "Ford"
+      expectedFordModel: "F-Series"

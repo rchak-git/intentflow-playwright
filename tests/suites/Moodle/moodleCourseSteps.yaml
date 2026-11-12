@@ -1,0 +1,56 @@
+page: "/course/view.php"
+description: "Moodle Course page interactions and course-level navigation"
+uiMap: "MoodleCourseUiMap"
+
+includes:
+  - "moodleHomePageSteps.yaml"
+
+# ---------------------------------------------------------------------------
+# SHARED SCENARIOS (Reusable Multi-Interaction Mechanics — Prefix: execute*)
+# ---------------------------------------------------------------------------
+sharedScenarios:
+  executeOpenCourse:
+    description: "Clicks a target course card specified by the calling profile"
+    steps:
+      - step: "Click specified course card link"
+        fieldKey: "${data:courseCardFieldKey}"
+        intent: "action"
+        params:
+          subIntent: "jsClick"
+
+  executeOpenCourseAndSelectTab:
+    description: "Opens course view page and selects a course navigation tab"
+    steps:
+      - refScenario: "executeOpenCourse"
+
+      - step: "Click course tab link"
+        fieldKey: "${data:targetTabFieldKey}"
+        intent: "action"
+        params:
+          subIntent: "click"
+          waitForNetwork: true
+
+# ---------------------------------------------------------------------------
+# PROFILES (Public Execution Targets & Explicit Precondition Stacking — Prefix: td_*)
+# ---------------------------------------------------------------------------
+profiles:
+  td_openMyFirstCourse:
+    description: "Execution profile: Opens 'My first course' card as a Student"
+    preconditions:
+      - refProfile: "moodleLoginSteps.td_successfulStudentLogin"
+      - refProfile: "moodleHomePageSteps.td_navigateToMyCourses"
+    steps:
+      - refScenario: "executeOpenCourse"
+        data:
+          courseCardFieldKey: "moodle_course_cardLink"
+
+  td_navigateToParticipants:
+    description: "Data-less transition profile: Navigates to Course Participants tab as a Student"
+    preconditions:
+      - refProfile: "moodleLoginSteps.td_successfulStudentLogin"
+      - refProfile: "moodleHomePageSteps.td_navigateToMyCourses"
+    steps:
+      - refScenario: "executeOpenCourseAndSelectTab"
+        data:
+          courseCardFieldKey: "moodle_course_cardLink"
+          targetTabFieldKey: "moodle_course_participantsTab"
