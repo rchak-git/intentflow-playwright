@@ -22,7 +22,7 @@ export default defineConfig({
   },
 
   use: {
-    baseURL: 'https://sandbox.moodledemo.net',
+    baseURL: 'https://mhufrostlor-qa.learningmate.com',
     headless: false,                                   //'https://mhufrostlor-qa.learningmate.com' ,                              // 'https://sandbox.moodledemo.net',
     trace: 'on',         //'retain-on-failure',
 

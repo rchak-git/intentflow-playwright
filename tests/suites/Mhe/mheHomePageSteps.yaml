@@ -1,9 +1,29 @@
-page: "/user/index.php"
+page: "/delivery-player/#/home"
 description: "MHE Home Directory page course card search and navigation scenarios"
 uiMap: "MheHomePageUiMap"
 
 includes:
   - "mhe_LoginSteps.yaml"
+
+sharedScenarios:
+  executeSearchAndOpenCourse:
+    description: "Searches for a course by name on the Home Directory and opens its course card"
+    steps:
+      - step: 'Enter "${data:courseName}" into course search input'
+        fieldKey: "mhe_hm_searchInput"
+        widgetType: "TEXTBOX"
+        intent: "populate"
+        params:
+          value: "${data:courseName || 'Project Assignment flow'}"
+
+      - step: 'Click image link on course card "${data:courseName}"'
+        fieldKey: "mhe_hm_courseCard"
+        widgetType: "CARD"
+        intent: "action"
+        params:
+          subIntent: "clickSubControl"
+          anchorText: "${data:courseName || 'Project Assignment flow'}"
+          childWidget: "imageLink"
 
 profiles:
   td_searchAndOpenCourseDashboard:
@@ -11,23 +31,14 @@ profiles:
     preconditions:
       - refProfile: "mhe_LoginSteps.td_successfulAdminLogin"
     steps:
-      - step: 'Enter "${data:courseName}" into course search input'
-        fieldKey: "mhe_hm_searchInput"
-        intent: "populate"
-        params:
-          value: "${data:courseName || 'Project Assignment flow'}"
+      - step: "Execute course search and open course card"
+        refScenario: "executeSearchAndOpenCourse"
+        data:
+          courseName: "Project Assignment flow"
 
-      - step: 'Click image link on course card "${data:courseName}"'
-        fieldKey: "mhe_hm_courseCard"
-        intent: "action"
-        params:
-          subIntent: "clickSubControl"
-          anchorText: "${data:courseName || 'Project Assignment flow'}"
-          childWidget: "imageLink"
-
-      - step: 'Verify Course Dashboard URL contains "${data:expectedUrlSnippet}"'
+      - step: "Verify Course Dashboard URL contains /delivery-player/#/dashboard"
         fieldKey: "page"
         intent: "verify"
         params:
           subIntent: "urlContains"
-          value: "${data:expectedUrlSnippet || 'course/view.php'}"
+          value: "/delivery-player/#/dashboard"

@@ -2,34 +2,39 @@ page: "/delivery-player/#/login"
 description: "MHE Delivery Player Login Suite"
 uiMap: "MheLoginUiMap"
 
+sharedScenarios: {}
+
 profiles:
   td_successfulAdminLogin:
     description: "Successfully log into MHE Delivery Player with valid credentials"
     steps:
-      - step: "Navigate to MHE Login page"
+      - step: "Given the user opens the MHE Delivery Player login page"
         fieldKey: "page"
         intent: "action"
         params:
           subIntent: "navigate"
           value: "/delivery-player/#/login"
-      - step: "Enter username"
+      - step: "When the user enters the username into the username field"
         fieldKey: "mhe_login_usernameTextbox"
+        widgetType: "TEXTBOX"
         intent: "populate"
         params:
           value: "${data:username || 'admin_one'}"
-      - step: "Enter password"
+      - step: "And the user enters the password into the password field"
         fieldKey: "mhe_login_passwordTextbox"
+        widgetType: "TEXTBOX"
         intent: "populate"
         params:
           value: "${data:password || 'P@ssw0rd'}"
-      - step: "Click login button"
+      - step: "And the user clicks the login button"
         fieldKey: "mhe_login_loginButton"
+        widgetType: "BUTTON"
         intent: "action"
         params:
           subIntent: "click"
-      - step: "Verify URL contains home path"
+      - step: "Then the user should be redirected to the Home directory page"
         fieldKey: "page"
         intent: "verify"
         params:
           subIntent: "urlContains"
-          value: "${data:expectedUrlSubstring || '/delivery-player/#/login'}"
+          value: "${data:expectedUrlSubstring || '/delivery-player'}"
