@@ -1,6 +1,6 @@
 page: "/user/index.php"
 description: "Moodle Participants Page Step Definitions and Workflows"
-uiMap: "MoodleParticipantUiMap"
+uiMap: "moodleParticipantsUiMap"
 
 includes:
   - "moodleCourseSteps.yaml"
@@ -19,7 +19,7 @@ profiles:
     preconditions:
       - refProfile: "moodleLoginSteps.td_successfulStudentLogin"
       - refProfile: "moodleHomePageSteps.td_navigateToMyCourses"
-      - refProfile: "moodleCourseSteps.td_navigateToParticipants"
+      - refProfile: "moodleCourseSteps.td_navigateToCourseParticipants"
     steps:
       - step: "Verify the Participants table is visible"
         fieldKey: "moodle_participant_participantsTable"
@@ -47,7 +47,7 @@ profiles:
     preconditions:
       - refProfile: "moodleLoginSteps.td_successfulStudentLogin"
       - refProfile: "moodleHomePageSteps.td_navigateToMyCourses"
-      - refProfile: "moodleCourseSteps.td_navigateToParticipants"
+      - refProfile: "moodleCourseSteps.td_navigateToCourseParticipants"
     steps:
       - step: "Verify the Participants table is visible"
         fieldKey: "moodle_participant_participantsTable"
@@ -82,7 +82,7 @@ profiles:
     preconditions:
       - refProfile: "moodleLoginSteps.td_successfulStudentLogin"
       - refProfile: "moodleHomePageSteps.td_navigateToMyCourses"
-      - refProfile: "moodleCourseSteps.td_navigateToParticipants"
+      - refProfile: "moodleCourseSteps.td_navigateToCourseParticipants"
     steps:
       - step: "Verify Roles column for Sam Student"
         fieldKey: "moodle_participant_participantsTable"
@@ -125,7 +125,7 @@ profiles:
     preconditions:
       - refProfile: "moodleLoginSteps.td_successfulStudentLogin"
       - refProfile: "moodleHomePageSteps.td_navigateToMyCourses"
-      - refProfile: "moodleCourseSteps.td_navigateToParticipants"
+      - refProfile: "moodleCourseSteps.td_navigateToCourseParticipants"
     steps:
       - step: "Select checkbox for specified row anchor"
         fieldKey: "moodle_participant_participantsTable"
@@ -146,7 +146,7 @@ profiles:
     preconditions:
       - refProfile: "moodleLoginSteps.td_successfulStudentLogin"
       - refProfile: "moodleHomePageSteps.td_navigateToMyCourses"
-      - refProfile: "moodleCourseSteps.td_navigateToParticipants"
+      - refProfile: "moodleCourseSteps.td_navigateToCourseParticipants"
     steps:
       - step: "Extract all row data from Participants table"
         fieldKey: "moodle_participant_participantsTable"
@@ -160,7 +160,7 @@ profiles:
     preconditions:
       - refProfile: "moodleLoginSteps.td_successfulStudentLogin"
       - refProfile: "moodleHomePageSteps.td_navigateToMyCourses"
-      - refProfile: "moodleCourseSteps.td_navigateToParticipants"
+      - refProfile: "moodleCourseSteps.td_navigateToCourseParticipants"
     steps:
       - step: "Select header checkbox to select all rows"
         fieldKey: "moodle_participant_selectAllCheckbox"

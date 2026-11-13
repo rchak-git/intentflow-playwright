@@ -4,7 +4,7 @@ Feature: Moodle User Authentication
   So that I can access my online courses and dashboard
 
   Background:
-    Given the user navigates to the Moodle Login page
+    Given the user navigates to the Moodle Login page - https://sandbox.moodledemo.net
 
   # ---------------------------------------------------------------------------
   # POSITIVE AUTHENTICATION

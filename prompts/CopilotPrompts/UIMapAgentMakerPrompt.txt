@@ -19,14 +19,16 @@ Create the following files in the repository:
 
 1. **`AGENTS.md`** (at the repository root) — The single source of truth for the UI Map Builder agent. Bake in ALL of these exact rules and workflows:
 
-   - **Dynamic Schema Reading (Zero Type Drift):**
+   - **Dynamic Schema Reading & Strict Type Compliance (Zero Type Drift):**
      - Always read `src/types/uiMapTypes.ts`, `src/types/intentSchema.ts`, and `src/registries/UiMapIndex.ts` directly from the workspace before generating or modifying any UI Map.
+     - **Strict Enum Compliance:** Strictly adhere to the exact union string literal values defined in `src/types/uiMapTypes.ts` for `WidgetType` and `LocatorStrategy`. Do not invent unmapped types or guess casing.
      - Generate declarative TypeScript dictionary objects (`Record<string, UiMapEntry>`) ONLY — never generate classes, `(page) => ...` functions, async methods, or Page Object Models.
      - Never output empty strings for optional properties (e.g., never output `text: ''`).
 
    - **File Naming, Placement & Registry Synchronization (`UiMapIndex.ts`):**
      - Place UI Map files under `src/registries/<AUT_Directory>/<camelCasePageName>.map.ts` (preserving exact directory casing, e.g., `src/registries/Moodle/`, `src/registries/Mhe/`, `src/registries/Angular/`, `src/registries/React/`).
-     - Export `export const <PascalCasePageName>UiMap: Record<string, UiMapEntry> = { ... }` with keys named `<page_prefix>_<description><WidgetType>` (e.g., `moodle_participants_searchInput` or `mhe_login_submitButton`).
+     - Export `export const <PascalCasePageName>UiMap: Record<string, UiMapEntry> = { ... }` with keys named `<pagePrefix>_<elementDescription><WidgetType>` (e.g., `moodle_participants_searchInput` or `mhe_login_submitButton`).
+     - **Key Collision Prevention:** Ensure key names include a distinct page/component qualifier to prevent key collisions when spread into consolidated domain maps (e.g., `MOODLE_UI_MAP`).
      - **Mandatory Registry Sync:** Inspect `src/registries/UiMapIndex.ts`. If `<PascalCasePageName>UiMap` is not yet registered, update `src/registries/UiMapIndex.ts` to:
        1. Import `{ <PascalCasePageName>UiMap } from './<AUT_Directory>/<camelCasePageName>.map'`.
        2. Spread `...<PascalCasePageName>UiMap` into the corresponding consolidated domain map (e.g., `MOODLE_UI_MAP`, `MHE_UI_MAP`).
@@ -35,6 +37,7 @@ Create the following files in the repository:
    - **Reaching Authenticated / Deep Target Pages:**
      - *Auto-Discovery First:* Search `tests/suites/**/*.yaml` for an existing profile or `refProfile` that navigates to the target page (matching by page name, URL, or domain keywords) so the tester does not have to supply a test path manually.
      - *Session Capture:* Run `npx tsx src/cli/reachPage.ts --suite <discovered-yaml> --profile <discovered-profile>` to reach the target state, save `playwright/.auth/state.json`, and print `TARGET_URL=...`, then inspect the live page via Playwright MCP (`browser_navigate` -> `browser_snapshot`).
+     - *Auth State Fallback:* If `playwright/.auth/state.json` is missing, expired, or redirects to an SSO login block, pause execution and prompt the user to perform an interactive login session or supply a valid session state before proceeding.
      - *Fallback:* If no matching suite exists, check `.env` for base URL/credentials (never hardcode secrets) and navigate interactively via Playwright MCP, or ask the user if MFA/manual steps are required.
 
    - **Main Flow (MF-1) — Scenario-Scoped Extraction:**

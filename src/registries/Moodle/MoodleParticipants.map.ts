@@ -1,7 +1,5 @@
 import type { UiMapEntry } from '../../types/uiMapTypes';
 
-
-
 export const MoodleParticipantUiMap: Record<string, UiMapEntry> = {
 
   moodle_participant_matchSelect: {
@@ -96,7 +94,7 @@ export const MoodleParticipantUiMap: Record<string, UiMapEntry> = {
       lastAccess: { index: 5, controlType: 'TEXT', subSelector: 'td.cell.c4' }
     }
   },
-   
+
   moodle_participant_withSelectedUsersSelect: {
 
     widgetType: 'SELECT',
@@ -107,4 +105,7 @@ export const MoodleParticipantUiMap: Record<string, UiMapEntry> = {
 
   }
 
-}; 
+};
+
+
+

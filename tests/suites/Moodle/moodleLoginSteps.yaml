@@ -1,6 +1,6 @@
 page: "/login/index.php"
 description: "Moodle User Authentication Suite"
-uiMap: "MoodleParticipantUiMap"
+uiMap: "MoodleLoginPageUiMap"
 
 # ---------------------------------------------------------------------------
 # SHARED SCENARIOS (Private Step Mechanics — Prefix: execute*)
