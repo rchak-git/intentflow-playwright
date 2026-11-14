@@ -100,16 +100,6 @@ profiles:
           username: "student"
           password: "sandbox24"
 
-  td_successfulAdminLogin:
-    description: "Valid admin login — overrides landing target defaults for admin console"
-    steps:
-      - refScenario: "executeValidLoginAndVerifyLanding"
-        data:
-          username: "admin"
-          password: "sandbox24"
-          expectedUrlSubstring: "sandbox.moodledemo.net"
-          expectedHeaderText: "Hi, Admin!"
-
   td_unsuccessfulLoginWithInvalidPassword:
     description: "Execution target for invalid password login test"
     steps:

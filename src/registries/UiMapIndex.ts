@@ -20,6 +20,7 @@ import {RadioGroupUiMap} from './temp/radioGroupUiMap';
 import {AngularRadioGroupUiMap} from './temp/AngularRadioGroupUiMap';
 import {AngularMaterialCardUiMap} from './temp/AngularMaterialCardUiMap';
 import {MuiAutocompleteUiMap} from './temp/MuiAutocompleteUiMap';
+import { MultipleWindowsUiMap } from './temp/multipleWindows.map';
 
 
 // Consolidated Moodle Domain Map
@@ -46,6 +47,7 @@ export const TEMP_UI_MAP: Record<string, UiMapEntry> = {
   ...AngularRadioGroupUiMap,
   ...AngularMaterialCardUiMap,
   ...MuiAutocompleteUiMap,
+ ...MultipleWindowsUiMap,
 };
 
 // Unified Global Map
@@ -86,5 +88,7 @@ export const UI_MAP_REGISTRY: Record<string, Record<string, UiMapEntry>> = {
   AngularRadioGroupUiMap: AngularRadioGroupUiMap as Record<string,UiMapEntry>,
   AngularMaterialCardUiMap: AngularMaterialCardUiMap as Record<string,UiMapEntry>,
   MuiAutocompleteUiMap: MuiAutocompleteUiMap as Record<string,UiMapEntry>,
+  MultipleWindowsUiMap,
+  multipleWindowsUiMap: MultipleWindowsUiMap as Record<string, UiMapEntry>,
 
 };

@@ -307,7 +307,7 @@ export class CommandDispatcher {
   }
 
   /**
-   * Core Polymorphic Step Dispatcher with Dynamic fieldKey Token Evaluation
+   * Core Polymorphic Step Dispatcher with Dynamic fieldKey Token Evaluation & Two-Tab Support
    */
   public async executeStep(
     page: Page,
@@ -315,9 +315,12 @@ export class CommandDispatcher {
     stepIndex: number,
     dataRecord: Record<string, any> = {}
   ): Promise<void> {
-    this.activePage = page;
-    this.pagesMap.set('main', page);
-    const activeTargetPage = page;
+    if (this.pagesMap.get('main') !== page) {
+      this.pagesMap.clear();
+      this.pagesMap.set('main', page);
+      this.activePage = page;
+    }
+    const activeTargetPage = this.activePage || page;
 
     // Dynamic fieldKey Token Evaluation: Resolve dynamic tokens inside step.fieldKey before UI map lookup!
     const rawFieldKey = step.fieldKey || 'page';
@@ -333,6 +336,11 @@ export class CommandDispatcher {
 
         // 1. Page-Level Execution (fieldKey === 'page')
         if (String(fieldKeyDisplay).toLowerCase() === 'page') {
+          if (step.intent === 'custom' && params.handler === 'switchTab') {
+            await this.handleSwitchTab(activeTargetPage, params);
+            return;
+          }
+
           const defaultPageEntry: UiMapEntry = { widgetType: 'PAGE' };
           const pageControl = new PageControl(activeTargetPage, defaultPageEntry, params);
 
@@ -371,7 +379,7 @@ export class CommandDispatcher {
           case 'verify':
             await control.verify(params.subIntent || 'equals', params.value, params);
             break;
-          
+
           case 'extract': {
             const extractedVal = await control.getValue();
             if (params.storeAs) {
@@ -399,10 +407,49 @@ export class CommandDispatcher {
           console.log(`[IntentFlow] Stored runtime context key "${params.storeAs}" = "${capturedValue}"`);
         }
       } catch (error) {
-        await this.captureErrorScreenshot(activeTargetPage, stepIndex);
+        await this.captureErrorScreenshot(this.activePage || activeTargetPage, stepIndex);
         throw error;
       }
     });
+  }
+
+  /**
+   * Minimal two-tab lifecycle:
+   * - 'new': focuses the newly opened child tab
+   * - 'main': closes any open child tab(s) and restores focus to the main tab
+   */
+  private async handleSwitchTab(currentPage: Page, params: StepParams): Promise<void> {
+    const context = currentPage.context();
+    const targetKey = params.value !== undefined ? String(params.value) : 'new';
+    const timeout = params.timeout ?? 5000;
+    const mainPage = this.pagesMap.get('main') || currentPage;
+
+    if (targetKey === 'new') {
+      const existingChild = context.pages().find((p) => !p.isClosed() && p !== mainPage);
+      const childPage = existingChild ?? (await context.waitForEvent('page', { timeout }));
+
+      this.pagesMap.set('new', childPage);
+      await childPage.waitForLoadState('domcontentloaded');
+      await childPage.bringToFront();
+      this.activePage = childPage;
+      console.log(`[IntentFlow] Switched active tab to 'new' (${childPage.url()})`);
+      return;
+    }
+
+    if (targetKey === 'main') {
+      for (const p of context.pages()) {
+        if (p !== mainPage && !p.isClosed()) {
+          await p.close();
+        }
+      }
+      this.pagesMap.delete('new');
+      await mainPage.bringToFront();
+      this.activePage = mainPage;
+      console.log(`[IntentFlow] Closed child tab and returned focus to 'main' (${mainPage.url()})`);
+      return;
+    }
+
+    throw new Error(`[IntentFlow] Unsupported switchTab target '${targetKey}'. Expected 'main' or 'new'.`);
   }
 
   private resolveUiEntry(fieldKey: string): UiMapEntry {
@@ -447,7 +494,7 @@ export class CommandDispatcher {
       case 'PAGE':
         return new PageControl(page, uiEntry, params);
 
-        case 'CARD':
+      case 'CARD':
         return new CardControl(page, uiEntry, params);
 
       case 'CONTAINER':

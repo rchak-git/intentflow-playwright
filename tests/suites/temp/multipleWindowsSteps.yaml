@@ -1,0 +1,64 @@
+page: "https://the-internet.herokuapp.com/windows"
+description: "Herokuapp Multiple Windows multi-tab navigation POC"
+uiMap: "multipleWindowsUiMap"
+
+sharedScenarios:
+  sc_verifyMultiTabNavigation:
+    description: "Open a new browser tab, verify its heading, and switch back to the main tab"
+    steps:
+      - step: "Navigate to Herokuapp Multiple Windows page"
+        fieldKey: "page"
+        intent: "action"
+        params:
+          subIntent: "navigate"
+          value: "${data:baseUrl || 'https://the-internet.herokuapp.com/windows'}"
+
+      - step: "Verify parent page heading is visible"
+        fieldKey: "herokuapp_windows_pageHeader"
+        intent: "verify"
+        params:
+          subIntent: "equals"
+          value: "${data:parentHeader || 'Opening a new window'}"
+
+      - step: "Click 'Click Here' link to launch new tab"
+        fieldKey: "herokuapp_windows_clickHereLink"
+        intent: "action"
+        params:
+          subIntent: "click"
+
+      - step: "Switch focus to the newly opened browser tab"
+        fieldKey: "page"
+        intent: "custom"
+        params:
+          handler: "switchTab"
+          value: "new"
+
+      - step: "Verify child tab heading is visible"
+        fieldKey: "herokuapp_newWindow_pageHeader"
+        intent: "verify"
+        params:
+          subIntent: "equals"
+          value: "${data:childHeader || 'New Window'}"
+
+      - step: "Switch focus back to the main browser tab"
+        fieldKey: "page"
+        intent: "custom"
+        params:
+          handler: "switchTab"
+          value: "main"
+
+      - step: "Verify parent page heading is still visible on main tab"
+        fieldKey: "herokuapp_windows_pageHeader"
+        intent: "verify"
+        params:
+          subIntent: "equals"
+          value: "${data:parentHeader || 'Opening a new window'}"
+
+profiles:
+  td_herokuMultipleWindows:
+    description: "End-to-end multi-tab switch and return flow"
+    refScenario: "sc_verifyMultiTabNavigation"
+    data:
+      baseUrl: "https://the-internet.herokuapp.com/windows"
+      parentHeader: "Opening a new window"
+      childHeader: "New Window"

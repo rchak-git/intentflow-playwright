@@ -14,6 +14,15 @@ Feature: Moodle Course Participant Table Verification
     And the Participants table should contain "Sam Student"
     And the Participants table should contain "Terri Teacher"
 
+    Scenario: Authenticated user verifies course participants list
+    Given the user performs successful login with valid admin credentials
+    When the user clicks on the "My courses" navigation link
+    And the user clicks on the "My first course" link
+    And the user clicks the Participants tab
+    Then the Participants table should be visible
+    And the Participants table should contain "Sam Student"
+    And the Participants table should contain "Terri Teacher"
+
 
     Paradigm 1: Full-Table Summary
   Scenario: Verify participants table visibility, row count, and global content

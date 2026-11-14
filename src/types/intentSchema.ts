@@ -112,6 +112,18 @@ export const StepParamsSchema = z
       message: `Invalid state value for subIntent 'state'. Allowed values are: ${STATE_VALUES.join(', ')}`,
       path: ['value'],
     }
+  )
+  .refine(
+    (data) => {
+      if (data.handler === 'switchTab' && data.value !== undefined) {
+        return data.value === 'main' || data.value === 'new';
+      }
+      return true;
+    },
+    {
+      message: "[IntentFlow Schema] handler 'switchTab' only accepts value: 'main' | 'new'.",
+      path: ['value'],
+    }
   );
 
 export const CheckboxStateParamsSchema = StepParamsSchema.extend({
@@ -129,7 +141,7 @@ export const StandardStepSchema = z.object({
     "BUTTON", 
     "DROPDOWN", 
     "CHECKBOX", 
-    "RADIO_GROUP",
+    "RADIO_GROUP", 
     "SELECT", 
     "CUSTOM_SELECT", 
     "CONTAINER", 
