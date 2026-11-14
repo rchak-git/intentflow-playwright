@@ -68,3 +68,293 @@ FOUR MANDATORY PATH 2 RULES:
            intent: "populate"
            params:
              value: "${data:username || 'student'}"
+Rule 2.1 — 1-Hop Redirection Limit:
+
+A sharedScenario may reference another sharedScenario up to a maximum depth of ONE hop (Scenario A -> Scenario B -> Steps). Deeper nesting is strictly forbidden.
+
+Rule 2.3 & 2.5 — Shallow Preconditions & Explicit Setup Stacking:
+
+Preconditions are resolved SHALLOWLY (1 level deep only). When a precondition profile executes, its inner preconditions are IGNORED.
+
+Navigation profiles (e.g., td_navigateToMyCourses) MUST NOT hardcode login/authentication preconditions.
+
+Test entry profiles requiring authentication or prerequisite page state MUST explicitly stack all preceding setup profiles in sequential order inside their top-level preconditions: array (e.g., [moodleLoginSteps.td_successfulStudentLogin, moodleHomePageSteps.td_navigateToMyCourses]).
+
+Rule 2.7 — Precondition Profile Verification & Interactive Provisioning:
+
+Every cross-suite Given state (e.g., "user performs successful login with valid admin credentials") MUST resolve to an existing td_* profile in AVAILABLE_PARENT_SUITES_YAML (or INHERITANCE / PARENT SUITES).
+
+NEVER hallucinate an unverified td_* profile name (e.g., do NOT output moodleLoginSteps.td_successfulAdminLogin unless it actually exists in the provided parent YAML).
+
+NEVER inline parent-page UI steps (such as username/password entry) into a child feature YAML to work around a missing parent profile.
+
+Interactive Resolution Flow:
+
+Step 1 (Detect & Prompt): If a required parent profile does not exist in AVAILABLE_PARENT_SUITES_YAML, halt artifact generation and emit the MISSING_PRECONDITION_PROFILES block (Section E), identifying the closest existing template profile (e.g., td_successfulStudentLogin) and asking the user for the missing parameter values (or offering a use placeholders option).
+
+Step 2 (Provision & Compile): Once the user provides the values (or selects use placeholders), clone the template profile's refScenario and data structure to generate ARTIFACT 0 (the new td_* profile block for the parent suite YAML), and wire that new refProfile into ARTIFACT 1 and ARTIFACT 2.
+
+================================================================================
+SECTION C: STEP TRANSLATION MATRIX & CONTROL CAPABILITIES
+Translate Gherkin steps strictly according to supported intents and subIntents for each target control type.
+
+EVERY STEP MUST INCLUDE A READABLE DESCRIPTION PROPERTY (step:):
+
+YAML
+- step: "Enter username into field"
+  fieldKey: "moodle_login_usernameTextbox"
+  intent: "populate"
+  params:
+    value: "${data:username || 'student'}"
+PAGE-LEVEL VERIFICATIONS & TEXT MATCHING:
+
+Any Gherkin verification checking overall page URL, header text, page title, or general page body text (e.g., "the current page URL should contain X", "the page header should display Y") MUST be mapped to fieldKey: "page".
+
+intent: "verify", params: { subIntent: "contains", value: "${data:expectedText || '...'}" }
+
+intent: "verify", params: { subIntent: "urlContains", value: "..." }
+
+Page text assertions DO NOT require a specific UI map entry and MUST NEVER trigger a Gap Report.
+
+CONTROL-TYPE CAPABILITY MATRIX & ALLOWED SUB-INTENTS:
+A. CUSTOM_SELECT CONTROLS (widgetType: 'CUSTOM_SELECT'):
+
+intent: "populate" --> params: { value: "${data:optionValue}" }
+
+intent: "verify"   --> subIntent: ["contains", "equals", "state", "optionsContains"]
+
+intent: "action"   --> subIntent: ["open", "close"]
+
+B. WEB_TABLE CONTROLS (widgetType: 'WEB_TABLE' | 'TABLE'):
+
+intent: "verify"   --> subIntent: ["cellText", "contains", "count", "rowCount", "allRowCheckboxesState"]
+
+intent: "action"   --> subIntent: ["clickSubControl", "sortColumn"]
+
+intent: "extract"  --> subIntent: ["tableData"]
+
+C. CARD / COMPOSITE CONTROLS (widgetType: 'CARD' | 'CONTAINER'):
+
+intent: "action"   --> subIntent: ["clickSubControl", "click", "hover"]
+
+intent: "verify"   --> subIntent: ["contains", "equals", "state"]
+
+D. RADIO GROUP CONTROLS (widgetType: 'RADIO_GROUP'):
+
+intent: "populate" --> params: { value: "${data:radioValue}" }
+
+intent: "verify"   --> subIntent: ["contains", "equals", "optionsContains", "state"]
+
+intent: "action"   --> subIntent: ["select"]
+
+E. TEXTBOX / DROPDOWN / BUTTON / CHECKBOX / SEARCH / SELECT / LINK (Standard Elements):
+
+intent: "action"   --> subIntent: ["click", "jsClick", "navigate", "pressKey"]
+
+intent: "populate" --> params: { value: "${data:variableName}" }
+
+intent: "verify"   --> subIntent: ["state", "contains", "urlContains"]
+
+================================================================================
+SECTION D: ARTIFACT 2 (PLAYWRIGHT SPEC GENERATION)
+Create a complete Playwright TypeScript spec file using this exact structure:
+
+TypeScript
+import { test } from '@playwright/test';
+import { loadYamlSuite } from '../../../src/engine/yamlLoader';
+import { CommandDispatcher } from '../../../src/engine/commandDispatcher';
+import { SuiteSpec } from '../../../src/types/intentSchema';
+
+const SUITE_PATH = 'tests/suites/<SuiteSubPath>/<pageName>Steps.yaml';
+
+test.describe('<Feature Title> Workflows', () => {
+  let suite: SuiteSpec;
+
+  test.beforeAll(() => {
+    suite = loadYamlSuite(SUITE_PATH);
+  });
+
+  test('<Scenario Description>', async ({ page }) => {
+    const dispatcher = await CommandDispatcher.fromSuite(suite);
+    await dispatcher.executeProfile(page, '<td_profileName>', suite);
+  });
+});
+================================================================================
+SECTION E: PRE-FLIGHT BLOCKER (GAP REPORT & MISSING PROFILE MODAL)
+Before generating artifacts, run two pre-flight checks:
+
+UI Map Check: Is an interactive UI control required by Gherkin missing from UI MAP CONTENTS and not covered by fieldKey: "page"?
+
+Parent Precondition Check (Rule 2.7): Does a Given step require a parent suite profile (td_*) that is absent from AVAILABLE_PARENT_SUITES_YAML?
+
+If EITHER check fails, STOP and output the structured pre-flight YAML report followed by an interactive prompt asking the user for the missing data:
+
+YAML
+status: PREFLIGHT_BLOCKED # Use MISSING_UI_MAP_ENTRIES, MISSING_PRECONDITION_PROFILES, or BOTH
+missingKeys: # Omit if empty
+  - stepText: "<gherkin step>"
+    suggestedFieldKey: "<suggested_fieldKey>"
+    suggestedWidgetType: "<TEXTBOX|BUTTON|LINK|CHECKBOX|SELECT|CUSTOM_SELECT|RADIO_GROUP|WEB_TABLE|CARD>"
+missingProfiles: # Omit if empty
+  - stepText: "<gherkin Given step>"
+    targetSuiteFile: "<e.g., moodleLoginSteps.yaml>"
+    suggestedProfileKey: "<e.g., td_successfulAdminLogin>"
+    templateProfileFound: "<e.g., td_successfulStudentLogin>"
+    requiredDataKeys:
+      - key: "<e.g., username>"
+        description: "<e.g., Admin login username>"
+      - key: "<e.g., password>"
+        description: "<e.g., Admin login password>"
+After the YAML block, prompt the user conversationally:
+
+List the missing profile fields clearly and ask the user to reply with the values (or type use placeholders to scaffold ${data:...} defaults) so you can generate the parent profile patch and compile the suite in the next turn.
+
+
+==================================================INPUT CONTEXT SECTION
+TARGET APPLICATION NAME: Moodle
+SUITE NAME: MoodleParticipant
+UI MAP REGISTRY KEY: MoodleCourseUiMap
+PAGE ROUTE URL: "/login/index.php"
+
+DESTINATION_CONTEXT:
+TARGET_URL:
+EXPECTED_ELEMENT_KEY:
+
+INHERITANCE / PARENT SUITES:
+Parent Suite File:moodleCourseSteps.yaml
+Parent RefProfile Key: td_navigateToCourseParticipants
+Parent UiMap Export:
+
+GHERKIN SCENARIO:
+Feature: Moodle Course Participant Table Verification
+  Background:
+    Given the student is logged into Moodle
+    And the student navigates to the "My courses" page
+
+  Scenario: Verify course card metadata and open course via card title link
+    When the student inspects the course card for "My first course"
+    Then the course card should be visible
+    And the course card category should contain "Miscellaneous"
+    When the student clicks the title link on the "My first course" course card
+    Then the browser URL should contain "/course/view.php"
+
+  Scenario: Open a course from My Courses card and navigate to Participants tab
+    When the student clicks the title link on the "My first course" course card
+    And the student clicks the "Participants" tab on the course navigation bar
+    Then the browser URL should contain "/user/index.php"
+    
+UI MAP CONTENTS:
+ import type { UiMapEntry } from '../../types/uiMapTypes';
+
+export const MoodleParticipantUiMap: Record<string, UiMapEntry> = {
+
+  moodle_participant_matchSelect: {
+
+    widgetType: 'SELECT',
+
+    strategy: 'css',
+
+    selector: 'div[data-filterregion="filtermatch"] select[data-filterfield="join"]'
+
+  },
+
+  moodle_participant_filterMatchSelect: {
+
+    widgetType: 'SELECT',
+
+    strategy: 'css',
+
+    selector: 'div[data-filterregion="filter"] select[data-filterfield="join"]'
+
+  },
+
+  moodle_participant_filterTypeSelect: {
+
+    widgetType: 'SELECT',
+
+    strategy: 'css',
+
+    selector: 'div[data-filterregion="filter"] select[data-filterfield="type"]'
+
+  },
+
+  moodle_participant_removeFilterButton: {
+
+    widgetType: 'BUTTON',
+
+    strategy: 'css',
+
+    selector: 'button[data-filteraction="remove"]'
+
+  },
+
+  moodle_participant_addConditionButton: {
+
+    widgetType: 'BUTTON',
+
+    strategy: 'css',
+
+    selector: 'button[data-filteraction="add"]'
+
+  },
+
+  moodle_participant_clearFiltersButton: {
+
+    widgetType: 'BUTTON',
+
+    strategy: 'css',
+
+    selector: 'button[data-filteraction="reset"]'
+
+  },
+
+  moodle_participant_applyFiltersButton: {
+
+    widgetType: 'BUTTON',
+
+    strategy: 'css',
+
+    selector: 'button[data-filteraction="apply"]'
+
+  },
+
+  moodle_participant_selectAllCheckbox: {
+
+    widgetType: 'CHECKBOX',
+
+    strategy: 'css',
+
+    selector: 'input#select-all-participants'
+
+  },
+  moodle_participant_participantsTable: {
+    widgetType: 'WEB_TABLE',
+    strategy: 'css',
+    selector: 'table#participants',
+    rowSelector: 'tbody tr:not(.emptyrow)',
+    columns: {
+      select: { index: 1, controlType: 'CHECKBOX', subSelector: 'input.usercheckbox' },
+      fullName: { index: 2, controlType: 'LINK', subSelector: 'th.cell.c1 a' },
+      roles: { index: 3, controlType: 'TEXT', subSelector: 'td.cell.c2' },
+      groups: { index: 4, controlType: 'TEXT', subSelector: 'td.cell.c3' },
+      lastAccess: { index: 5, controlType: 'TEXT', subSelector: 'td.cell.c4' }
+    }
+  },
+
+  moodle_participant_withSelectedUsersSelect: {
+
+    widgetType: 'SELECT',
+
+    strategy: 'css',
+
+    selector: 'select#formactionid'
+
+  }
+
+};
+
+
+
+
+EXISTING_YAML_CONTENTS:
+EXISTING_SPEC_CONTENTS:
