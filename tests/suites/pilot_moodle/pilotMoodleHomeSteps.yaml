@@ -1,0 +1,88 @@
+page: "/"
+description: "Pilot Moodle home page interactions"
+uiMap:
+  - "pilotMoodleLoginUiMap"
+  - "pilotMoodleHomeUiMap"
+  - "appLevelControlsUiMap"
+includes:
+  - "AppLevelYamlSteps.yaml"
+
+sharedScenarios: {}
+
+profiles:
+  td_pilotAdminLogout:
+    description: "Log out as an admin and verify the signed-out home page"
+    preconditions:
+      - refProfile: "td_pilotSuccessfulAdminLogin"
+    steps:
+      - refScenario: "executePilotApplicationLogout"
+      - step: "Verify the page header is visible"
+        fieldKey: "pilot_moodle_home_headingLabel"
+        intent: "verify"
+        params:
+          subIntent: "state"
+          value: "visible"
+      - step: "Verify the page header text"
+        fieldKey: "pilot_moodle_home_headingLabel"
+        intent: "verify"
+        params:
+          subIntent: "equals"
+          value: "Moodle 5.3 sandbox demo"
+
+  td_pilotStudentLogout:
+    description: "Log out via the user menu and verify the signed-out home page"
+    preconditions:
+      - refProfile: "td_pilotSuccessfulStudentLogin"
+    steps:
+      - step: "Open the user menu"
+        fieldKey: "pilot_moodle_home_userMenuButton"
+        intent: "action"
+        params:
+          subIntent: "click"
+      - step: "Select Log out"
+        fieldKey: "pilot_moodle_home_logOutLink"
+        intent: "action"
+        params:
+          subIntent: "click"
+      - step: "Verify the Log in link is visible"
+        fieldKey: "pilot_moodle_appLevel_logInLink"
+        intent: "verify"
+        params:
+          subIntent: "state"
+          value: "visible"
+      - step: "Verify the page header is visible"
+        fieldKey: "pilot_moodle_home_headingLabel"
+        intent: "verify"
+        params:
+          subIntent: "state"
+          value: "visible"
+      - step: "Verify the page header text"
+        fieldKey: "pilot_moodle_home_headingLabel"
+        intent: "verify"
+        params:
+          subIntent: "equals"
+          value: "Moodle 5.3 sandbox demo"
+
+  td_pilotNavigateToMyCourses:
+    description: "Navigate from the authenticated home page to My courses"
+    # My courses is available after login; credentials are supplied by the spec.
+    preconditions:
+      - refProfile: "td_pilotSuccessfulStudentLogin"
+    steps:
+      - step: "Click My courses"
+        fieldKey: "pilot_moodle_home_myCoursesLink"
+        intent: "action"
+        params:
+          subIntent: "click"
+      - step: "Verify the My courses URL"
+        fieldKey: "page"
+        intent: "verify"
+        params:
+          subIntent: "urlContains"
+          value: "/my/courses[.]php"
+      - step: "Verify the My courses heading is visible"
+        fieldKey: "pilot_moodle_courses_headingLabel"
+        intent: "verify"
+        params:
+          subIntent: "state"
+          value: "visible"

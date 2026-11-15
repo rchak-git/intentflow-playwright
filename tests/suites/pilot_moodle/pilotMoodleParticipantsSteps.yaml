@@ -1,0 +1,46 @@
+page: "/user/index.php"
+description: "Pilot Moodle participants verification as admin"
+uiMap:
+  - "pilotMoodleLoginUiMap"
+  - "pilotMoodleHomeUiMap"
+  - "MoodleCourseUiMap"
+  - "moodleParticipantsUiMap"
+includes:
+  - "pilotMoodleLoginSteps.yaml"
+
+sharedScenarios: {}
+
+profiles:
+  td_pilotAdminVerifyCourseParticipants:
+    description: "Open My first course from Home and verify its participants"
+    preconditions:
+      - refProfile: "td_pilotSuccessfulAdminLogin"
+    steps:
+      - step: "Open My first course from the Home page"
+        fieldKey: "pilot_moodle_home_firstCourseLink"
+        intent: "action"
+        params:
+          subIntent: "click"
+      - step: "Open the Participants tab"
+        fieldKey: "moodle_course_participantsTab"
+        intent: "action"
+        params:
+          subIntent: "click"
+      - step: "Verify the Participants table is visible"
+        fieldKey: "moodle_participant_participantsTable"
+        intent: "verify"
+        params:
+          subIntent: "state"
+          value: "visible"
+      - step: "Verify the Participants table contains Sam Student"
+        fieldKey: "moodle_participant_participantsTable"
+        intent: "verify"
+        params:
+          subIntent: "contains"
+          value: "Sam Student"
+      - step: "Verify the Participants table contains Terri Teacher"
+        fieldKey: "moodle_participant_participantsTable"
+        intent: "verify"
+        params:
+          subIntent: "contains"
+          value: "Terri Teacher"

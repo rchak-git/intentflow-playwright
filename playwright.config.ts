@@ -2,10 +2,10 @@ import { defineConfig, devices } from '@playwright/test';
 
 export default defineConfig({
   testDir: './tests',
-  
+
   // Enable parallel execution inside individual spec files
   fullyParallel: true,
-  
+
   // Set parallel worker processes
   workers: 3,
 
@@ -22,12 +22,12 @@ export default defineConfig({
   },
 
   use: {
-    baseURL: 'https://mhufrostlor-qa.learningmate.com',
+    baseURL: 'https://sandbox.moodledemo.net',
     headless: false,                                   //'https://mhufrostlor-qa.learningmate.com' ,                              // 'https://sandbox.moodledemo.net',
     trace: 'on',         //'retain-on-failure',
 
     // --- VISUAL ARTIFACT SETTINGS ---
-    video:  'on',      //'retain-on-failure',
+    video: 'on',      //'retain-on-failure',
     screenshot: 'only-on-failure',
     actionTimeout: 30000,
     navigationTimeout: 60000,

@@ -1,0 +1,42 @@
+page: "/"
+description: "Pilot Moodle application-level controls"
+uiMap:
+  - "pilotMoodleLoginUiMap"
+  - "appLevelControlsUiMap"
+includes:
+  - "pilotMoodleLoginSteps.yaml"
+
+sharedScenarios:
+  executePilotApplicationLogout:
+    description: "Log out and verify the signed-out state"
+    steps:
+      - step: "Open the user menu"
+        fieldKey: "pilot_moodle_home_userMenuButton"
+        intent: "action"
+        params:
+          subIntent: "click"
+      - step: "Select Log out"
+        fieldKey: "pilot_moodle_home_logOutLink"
+        intent: "action"
+        params:
+          subIntent: "click"
+      - step: "Verify the signed-out Log in link is visible"
+        fieldKey: "pilot_moodle_appLevel_logInLink"
+        intent: "verify"
+        params:
+          subIntent: "state"
+          value: "visible"
+      - step: "Verify the authenticated user menu is hidden"
+        fieldKey: "pilot_moodle_home_userMenuButton"
+        intent: "verify"
+        params:
+          subIntent: "state"
+          value: "hidden"
+
+profiles:
+  td_pilotApplicationLogout:
+    description: "Log out from the authenticated user menu"
+    preconditions:
+      - refProfile: "td_pilotSuccessfulStudentLogin"
+    steps:
+      - refScenario: "executePilotApplicationLogout"

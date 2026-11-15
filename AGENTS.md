@@ -2,6 +2,8 @@
 
 These instructions are the single source of truth for building and maintaining UI Maps in this repository. Follow them in any compatible coding agent or harness. Use only workspace files, standard Node.js/TypeScript commands, and the standard Playwright MCP server; do not rely on vendor-specific APIs, extension settings, or model-specific prompt syntax.
 
+For requests to generate or update IntentFlow YAML suites and matching specs, read and follow `prompts/CopilotPrompts/intentflowYamlAuthorInstructions.md`. The UI Map-specific instructions below apply when building or maintaining UI Maps; the YAML generator does not modify UI Maps unless separately requested.
+
 ## Read the Live Contracts First
 
 Before creating or modifying a UI Map, read these files directly from the workspace:
@@ -40,7 +42,7 @@ The source types and registry are authoritative. In particular:
    npx tsx src/cli/reachPage.ts --suite <discovered-yaml> --profile <discovered-profile>
    ```
 
-   The helper runs the profile, saves `playwright/.auth/state.json`, and prints `STATE_SAVED=...` and `TARGET_URL=...`. Then inspect the live page with the standard Playwright MCP server (`browser_navigate` followed by `browser_snapshot`).
+   The helper runs the profile, saves `playwright/.auth/state.json`, and prints `STATE_SAVED=...` and `TARGET_URL=...`. If a profile needs runtime data, supply a JSON object via the `INTENTFLOW_REACH_DATA` environment variable; do not put credentials in the command line or logs. Then inspect the live page with the standard Playwright MCP server (`browser_navigate` followed by `browser_snapshot`).
 3. If the saved state is missing, expired, or the target redirects to an SSO login block, pause and ask the user to perform an interactive login or supply valid session state.
 4. If no matching suite/profile exists, check `.env` for a base URL or credentials. Never hardcode or print secrets. Navigate interactively through Playwright MCP, or ask whether MFA or other manual steps are required.
 

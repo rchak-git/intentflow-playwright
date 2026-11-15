@@ -46,6 +46,26 @@ test('reach target page and save authenticated state', async ({ page }) => {
   }
 
   const suite = loadYamlSuite(suitePath);
+  const rawData = process.env.INTENTFLOW_REACH_DATA;
+  if (rawData !== undefined) {
+    let data: unknown;
+    try {
+      data = JSON.parse(rawData);
+    } catch (error) {
+      if (error instanceof SyntaxError) {
+        throw new Error('INTENTFLOW_REACH_DATA must contain a valid JSON object.');
+      }
+      throw error;
+    }
+    if (!data || typeof data !== 'object' || Array.isArray(data)) {
+      throw new Error('INTENTFLOW_REACH_DATA must contain a valid JSON object.');
+    }
+    const profile = suite.profiles?.[profileName];
+    if (!profile) {
+      throw new Error('The requested profile was not found.');
+    }
+    profile.data = { ...profile.data, ...data };
+  }
   const dispatcher = await CommandDispatcher.fromSuite(suite);
   await dispatcher.executeProfile(page, profileName, suite);
 
@@ -73,7 +93,8 @@ async function main(): Promise<void> {
   }
 
   const testDir = path.resolve(process.cwd(), 'tests');
-  const runnerPath = path.join(testDir, `.reachPage-${process.pid}.spec.ts`);
+  const runnerName = `reachPage-${process.pid}.spec.ts`;
+  const runnerPath = path.join(testDir, runnerName);
   const statePath = path.resolve(process.cwd(), 'playwright', '.auth', 'state.json');
   mkdirSync(testDir, { recursive: true });
   writeFileSync(runnerPath, createRunnerTest(suitePath, profileName, statePath), 'utf8');
@@ -82,7 +103,7 @@ async function main(): Promise<void> {
     const command = process.platform === 'win32' ? 'npx.cmd' : 'npx';
     const result = spawnSync(
       command,
-      ['playwright', 'test', runnerPath, '--workers=1', '--reporter=list'],
+      ['playwright', 'test', runnerName, '--workers=1', '--reporter=list'],
       {
         env: {
           ...process.env,

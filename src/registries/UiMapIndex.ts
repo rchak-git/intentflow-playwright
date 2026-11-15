@@ -6,6 +6,9 @@ import { MoodleLoginPageUiMap } from './Moodle/moodleLogin.map';
 import { MoodleHomePageUiMap } from './Moodle/MoodleHomePage.map';
 import { MoodleCourseUiMap } from './Moodle/MoodleCourse.map';
 import { MoodleParticipantUiMap } from './Moodle/MoodleParticipants.map';
+import { PilotMoodleLoginUiMap } from './pilot_moodle/pilotMoodleLogin.map';
+import { PilotMoodleHomeUiMap } from './pilot_moodle/pilotMoodleHome.map';
+import { AppLevelControlsUiMap } from './pilot_moodle/appLevelControlsUI.map';
 import { AgGridTableUiMap } from './temp/AgGridUiMap';
 import { CustomSelectUiMap } from './temp/customSelect.map';
 
@@ -29,6 +32,9 @@ export const MOODLE_UI_MAP: Record<string, UiMapEntry> = {
   ...MoodleHomePageUiMap,
   ...MoodleCourseUiMap,
   ...MoodleParticipantUiMap,
+  ...PilotMoodleLoginUiMap,
+  ...PilotMoodleHomeUiMap,
+  ...AppLevelControlsUiMap,
 };
 
 // Consolidated McGraw Hill Domain Map
@@ -69,6 +75,12 @@ export const UI_MAP_REGISTRY: Record<string, Record<string, UiMapEntry>> = {
   MoodleHomePageUiMap: MoodleHomePageUiMap as Record<string, UiMapEntry>,
   MoodleCourseUiMap: MoodleCourseUiMap as Record<string, UiMapEntry>,
   moodleParticipantsUiMap: MoodleParticipantUiMap as Record<string, UiMapEntry>,
+  PilotMoodleLoginUiMap,
+  pilotMoodleLoginUiMap: PilotMoodleLoginUiMap as Record<string, UiMapEntry>,
+  PilotMoodleHomeUiMap,
+  pilotMoodleHomeUiMap: PilotMoodleHomeUiMap as Record<string, UiMapEntry>,
+  AppLevelControlsUiMap,
+  appLevelControlsUiMap: AppLevelControlsUiMap as Record<string, UiMapEntry>,
 
   // Direct Page Maps - MHE
   MheLoginUiMap: MheLoginUiMap as Record<string, UiMapEntry>,
