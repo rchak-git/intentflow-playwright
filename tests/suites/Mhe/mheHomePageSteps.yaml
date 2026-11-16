@@ -1,44 +1,53 @@
-page: "/delivery-player/#/home"
-description: "MHE Home Directory page course card search and navigation scenarios"
+description: "MHE Home Directory course search and course card launch workflows"
 uiMap: "MheHomePageUiMap"
-
 includes:
   - "mhe_LoginSteps.yaml"
 
 sharedScenarios:
-  executeSearchAndOpenCourse:
-    description: "Searches for a course by name on the Home Directory and opens its course card"
+  executeSearchAndOpenCourseCard:
+    description: "Searches for a course on the MHE Home Directory and opens its Course Dashboard in a new tab"
     steps:
-      - step: 'Enter "${data:courseName}" into course search input'
+      - step: "Wait for initial course grid to finish loading on the Home Directory"
+        fieldKey: "mhe_hm_courseCard"
+        intent: "verify"
+        params:
+          subIntent: "state"
+          value: "visible"
+
+      - step: "Search for the course on the MHE Home Directory"
         fieldKey: "mhe_hm_searchInput"
-        widgetType: "TEXTBOX"
         intent: "populate"
         params:
-          value: "${data:courseName || 'Project Assignment flow'}"
+          value: "${data:courseName}"
 
-      - step: 'Click image link on course card "${data:courseName}"'
+      - step: "Wait for the search results to filter down to the matching course card"
         fieldKey: "mhe_hm_courseCard"
-        widgetType: "CARD"
+        intent: "verify"
+        params:
+          subIntent: "count"
+          value: 1
+
+      - step: "Open the searched course card"
+        fieldKey: "mhe_hm_courseCard"
         intent: "action"
         params:
           subIntent: "clickSubControl"
-          anchorText: "${data:courseName || 'Project Assignment flow'}"
+          anchorText: "${data:courseName}"
           childWidget: "imageLink"
+
+      - step: "Switch focus to the newly opened Course Dashboard tab"
+        fieldKey: "page"
+        intent: "custom"
+        params:
+          handler: "switchTab"
+          value: "new"
 
 profiles:
   td_searchAndOpenCourseDashboard:
-    description: "Search and navigate to course dashboard from Home Directory"
+    description: "Logs in as Admin, searches for Project Assignment flow, and opens the Course Dashboard tab"
     preconditions:
       - refProfile: "mhe_LoginSteps.td_successfulAdminLogin"
     steps:
-      - step: "Execute course search and open course card"
-        refScenario: "executeSearchAndOpenCourse"
+      - refScenario: "executeSearchAndOpenCourseCard"
         data:
-          courseName: "Project Assignment flow"
-
-      - step: "Verify Course Dashboard URL contains /delivery-player/#/dashboard"
-        fieldKey: "page"
-        intent: "verify"
-        params:
-          subIntent: "urlContains"
-          value: "/delivery-player/#/dashboard"
+          courseName: "${data:courseName || 'Project Assignment flow'}"

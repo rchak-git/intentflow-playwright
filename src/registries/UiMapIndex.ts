@@ -24,6 +24,7 @@ import {AngularRadioGroupUiMap} from './temp/AngularRadioGroupUiMap';
 import {AngularMaterialCardUiMap} from './temp/AngularMaterialCardUiMap';
 import {MuiAutocompleteUiMap} from './temp/MuiAutocompleteUiMap';
 import { MultipleWindowsUiMap } from './temp/multipleWindows.map';
+import {MheCourseDashboardUiMap} from './Mhe/MheCourseDashboard.map';
 
 
 // Consolidated Moodle Domain Map
@@ -40,7 +41,8 @@ export const MOODLE_UI_MAP: Record<string, UiMapEntry> = {
 // Consolidated McGraw Hill Domain Map
 export const MHE_UI_MAP: Record<string, UiMapEntry> = {
   ...MheLoginUiMap,
-  ...MheHomePageUiMap
+  ...MheHomePageUiMap,
+  ...MheCourseDashboardUiMap
 };
 
 // Consolidated Temp / Experiments Domain Map
@@ -86,6 +88,7 @@ export const UI_MAP_REGISTRY: Record<string, Record<string, UiMapEntry>> = {
   MheLoginUiMap: MheLoginUiMap as Record<string, UiMapEntry>,
   mheLoginUiMap: MheLoginUiMap as Record<string, UiMapEntry>, // Alias safeguard
   MheHomePageUiMap: MheHomePageUiMap as Record<string, UiMapEntry>,
+  MheCourseDashboardUiMap: MheCourseDashboardUiMap as Record<string,UiMapEntry>,
 
   // Direct Page Maps - Temp Experiments
   

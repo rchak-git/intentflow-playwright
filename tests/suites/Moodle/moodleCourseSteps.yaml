@@ -36,7 +36,6 @@ profiles:
   td_openCourseFromCard:
     description: "Verify course card metadata and open course via card title link"
     preconditions:
-      - refProfile: "moodleLoginSteps.td_successfulStudentLogin"
       - refProfile: "moodleHomePageSteps.td_navigateToMyCourses"
     steps:
       - step: "Verify course card category text is Miscellaneous"
@@ -62,7 +61,6 @@ profiles:
   td_navigateToCourseParticipants:
     description: "Open a course from My Courses card and navigate to Participants tab"
     preconditions:
-      - refProfile: "moodleLoginSteps.td_successfulStudentLogin"
       - refProfile: "moodleHomePageSteps.td_navigateToMyCourses"
     steps:
       - refScenario: "openCourseCard"

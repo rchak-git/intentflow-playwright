@@ -1,3 +1,4 @@
+// src/engine/preflight.ts
 import type { PipelineStep, StandardStep, SuiteSpec } from '../types/intentSchema';
 import type { UiMapEntry, WidgetType } from '../types/uiMapTypes';
 import { resolveSuiteUiMaps } from './suiteUiMaps';
@@ -112,7 +113,15 @@ function findScenario(suite: SuiteSpec, name: string) {
   return scenarios[name] ?? scenarios[name.split('.').pop() ?? name];
 }
 
-/** Performs static checks along the same shallow profile paths used by the dispatcher. */
+function normalizeProfileName(refKey: string): string {
+  return refKey.includes('#')
+    ? refKey.split('#')[1]
+    : refKey.includes('.')
+      ? refKey.split('.')[1]
+      : refKey;
+}
+
+/** Performs static checks along the recursive profile and precondition paths used by the dispatcher. */
 export function preflightSuite(suite: SuiteSpec, profileName?: string): PreflightReport {
   const { uiMap, missingMaps } = resolveSuiteUiMaps(suite);
   const profiles = suite.profiles ?? {};
@@ -186,8 +195,7 @@ export function preflightSuite(suite: SuiteSpec, profileName?: string): Prefligh
       } else if ('refScenario' in step) {
         walkScenario(step.refScenario, profile, here, stack);
       } else if (resolving) {
-        const name = step.refProfile.includes('#') ? step.refProfile.split('#')[1]
-          : step.refProfile.includes('.') ? step.refProfile.split('.')[1] : step.refProfile;
+        const name = normalizeProfileName(step.refProfile);
         walkReferencedProfile(name, profile, here, stack);
       } else {
         add('UNSUPPORTED_OPERATIONS', profile, here, 'Inline refProfile is not dispatched as a profile reference.');
@@ -212,21 +220,59 @@ export function preflightSuite(suite: SuiteSpec, profileName?: string): Prefligh
     walkSteps(Array.isArray(scenario) ? scenario : scenario.steps, profile, `${location} -> ${name}`, [...stack, marker], true);
   }
 
-  function walkReferencedProfile(name: string, profile: string, location: string, stack: string[]) {
-    const target = profiles[name];
-    if (!target) {
-      add('MISSING_PROFILES', profile, location, `Profile '${name}' is not in the merged suite.`);
-      return;
-    }
+  function walkReferencedProfile(
+    rawRefKey: string,
+    profile: string,
+    location: string,
+    stack: string[],
+    overrides: Record<string, string> = {},
+    visited: Set<string> = new Set()
+  ) {
+    const effectiveRef =
+      overrides[rawRefKey] ||
+      (rawRefKey.includes('.') ? overrides[rawRefKey.split('.')[1]] : undefined) ||
+      rawRefKey;
+    const name = normalizeProfileName(effectiveRef);
+
     const marker = `profile:${name}`;
     if (stack.includes(marker)) {
       add('UNSUPPORTED_OPERATIONS', profile, location, `Cyclic profile reference '${name}'.`);
       return;
     }
+
+    if (visited.has(name)) {
+      return;
+    }
+
+    const target = profiles[name];
+    if (!target) {
+      add('MISSING_PROFILES', profile, location, `Profile '${name}' is not in the merged suite.`);
+      return;
+    }
+
     const next = [...stack, marker];
+
+    // Recursively validate upstream preconditions first (matching CommandDispatcher)
+    for (const [index, upstreamPre] of (target.preconditions ?? []).entries()) {
+      const mergedOverrides = {
+        ...((upstreamPre as any).overrides || {}),
+        ...overrides,
+      };
+      walkReferencedProfile(
+        upstreamPre.refProfile,
+        profile,
+        `${location} -> ${name}.preconditions[${index + 1}]`,
+        next,
+        mergedOverrides,
+        visited
+      );
+    }
+
     if (target.steps) walkSteps(target.steps, profile, `${location} -> ${name}`, next, false);
     else if (target.refScenario) walkScenario(target.refScenario, profile, `${location} -> ${name}`, next);
-    else add('UNSUPPORTED_OPERATIONS', profile, location, `Referenced profile '${name}' must have steps or refScenario for shallow execution.`);
+    else add('UNSUPPORTED_OPERATIONS', profile, location, `Referenced profile '${name}' must have steps or refScenario.`);
+
+    visited.add(name);
   }
 
   for (const name of names) {
@@ -235,10 +281,16 @@ export function preflightSuite(suite: SuiteSpec, profileName?: string): Prefligh
       add('MISSING_PROFILES', name, 'profile', `Profile '${name}' is not in the merged suite.`);
       continue;
     }
+    const visited = new Set<string>();
     for (const [index, precondition] of (profile.preconditions ?? []).entries()) {
-      const target = precondition.refProfile.includes('.')
-        ? precondition.refProfile.split('.')[1] : precondition.refProfile;
-      walkReferencedProfile(target, name, `preconditions[${index + 1}]`, []);
+      walkReferencedProfile(
+        precondition.refProfile,
+        name,
+        `preconditions[${index + 1}]`,
+        [`profile:${name}`],
+        (precondition as any).overrides || {},
+        visited
+      );
     }
     const location = `profile ${name}`;
     if (profile.steps?.length) walkSteps(profile.steps, name, location, [`profile:${name}`], false);

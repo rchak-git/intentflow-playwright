@@ -9,7 +9,7 @@ Turn supplied Gherkin, user stories, or manual test steps into IntentFlow Path 2
 3. Identify each scenario's actions, precise assertions, test data, target suite, required setup, and candidate existing profiles and UI Map keys. Preserve scenario intent and values; do not replace a specific assertion with a broader one.
 4. Search the relevant includes and parent suites for existing setup profiles. Check registry keys against `UI_MAP_REGISTRY`, not just TypeScript export names. A matching name is insufficient if the profile or map does not actually perform the required action.
 
-The YAML editor is an optional inspection tool, not an execution oracle. Its recursive preview can differ from the dispatcher's shallow precondition execution. Do not edit the editor.
+The YAML editor is an optional inspection tool, not an execution oracle. Rely on `src/engine/commandDispatcher.ts` (which resolves preconditions recursively with deduplication, data bubbling, and profile overrides) and `src/cli/preflight.ts` as the execution oracle. Do not edit the editor.
 
 ## Preflight and Blockers
 
@@ -18,7 +18,7 @@ Run `npx tsx src/cli/preflight.ts --suite <suite-path> --profile <profile-name>`
 Before writing executable profiles, check:
 
 - Every non-page target has an unambiguous, existing UI Map entry, and its requested operation is actually supported by the relevant control and schema. Verify table column keys, composite child selectors, and exact data types where used. A map entry alone does not prove a control is currently present on a live site.
-- Every prerequisite profile and scenario reference exists and is merged through the includes that the runtime actually loads. Check shallow preconditions in execution order, reference data scopes, nested-scenario limits, duplicate profile/scenario names, and precedence. Do not rely on the dispatcher's warning-and-continue behavior for missing profiles or map keys.
+- Every prerequisite profile and scenario reference exists and is merged through the includes that the runtime actually loads. Verify recursive precondition chains (ensuring no circular cycles), inherited data/override scopes, nested-scenario limits, duplicate profile/scenario names, and precedence. Do not rely on the dispatcher's warning-and-continue behavior for missing profiles or map keys.
 - Every data token has a supported source and every store token is produced earlier on the actual execution path. Do not assume YAML automatically loads environment variables.
 - Every expected assertion is truly implemented for the target widget and has the intended scope. In particular, page `contains` checks body text, not specifically a heading. A schema enum is not proof of implemented behavior: some unsupported operations may fall back to another action or assertion. Do not emit such operations as if supported.
 - Explicit `widgetType` in a step is optional and its allowed values/refinements may differ from UI Map widget types. Do not bypass a schema restriction by silently changing the requested behavior.
@@ -41,7 +41,7 @@ For missing capabilities, report `UNSUPPORTED_OPERATIONS` with scenario, step, r
 
 - Use `tests/suites/<suite-subpath>/<pageName>Steps.yaml`, preserving the existing file when updating. Set `page` when known, a concise `description`, actual registry key(s) in `uiMap`, and applicable relative `includes`. Use `sharedScenarios` and `profiles`; do not create a root `tests` section.
 - Give each executable scenario a unique `td_*` profile. Use concise human-readable `step` descriptions. Standard executable steps use `fieldKey`, `intent`, and appropriate `params`; reference steps use the schema's `refScenario` or `refProfile` form instead.
-- Stack all required upstream preconditions in order. The dispatcher executes preconditions shallowly; a parent profile's own preconditions are not automatically run. Do not assume an include's filename qualifies a profile at runtime without checking merged names.
+- Declare only the immediate upstream parent profile in `preconditions` (e.g., `mheAssignmentsDirectorySteps.td_clickCreateAssignment`) rather than stacking every ancestor profile or duplicating intermediate screen navigation steps inside the target profile; the dispatcher resolves upstream precondition chains recursively with deduplication. When a scenario requires different setup data or a different upstream role/login profile (e.g., student vs. admin), specify `data:` or `overrides:` on the precondition. Do not assume an include's filename qualifies a profile at runtime without checking merged names.
 - Reuse shared scenarios only where they faithfully represent the requested workflow. Use `${data:key}` and supported defaults only when resolution and scope have been verified; use `storeAs` and `${store:key}` only when the runtime supports the requested value and assertion.
 - For two-tab flows, use `fieldKey: "page"`, `intent: "custom"`, `handler: "switchTab"`, with `value: "new"` or `value: "main"` only after checking the current dispatcher. The current `main` operation closes child tabs; do not use it to represent switching back while keeping a child open.
 - Make non-destructive edits: preserve unrelated scenarios, profiles, comments, files, and user changes. Do not overwrite an existing profile merely because its name is similar; resolve collisions before writing.
@@ -59,8 +59,7 @@ For missing capabilities, report `UNSUPPORTED_OPERATIONS` with scenario, step, r
 
    ```sh
    npx tsx -e "import { loadYamlSuite } from './src/engine/yamlLoader'; loadYamlSuite(process.argv[1]); console.log('Suite loaded successfully');" <suite-path>
-   ```
 
    This checks loading and schema validation, not all references or runtime semantics. Also run the preflight command above for each changed profile and check the remaining preflight items against the merged suite, registry, dispatcher, and controls; report any check that could not be completed.
-2. Run `npx tsc --noEmit` when TypeScript files change. Run the exact positive spec methods described above and capture their results. Do not replace browser execution with test discovery or type-checking.
-3. In the final response list changed files, reused and created profiles, missing map entries, missing prerequisites/data, unsupported behavior, and a per-profile result: **passed**, **failed**, **blocked**, or **not run**, with the reason and test command. Distinguish a blocked placeholder from a completed scenario. Mention any requested negative-test result separately.
+2. Run npx tsc --noEmit when TypeScript files change. Run the exact positive spec methods described above and capture their results. Do not replace browser execution with test discovery or type-checking.
+3. In the final response list changed files, reused and created profiles, missing map entries, missing prerequisites/data, unsupported behavior, and a per-profile result: passed, failed, blocked, or not run, with the reason and test command. Distinguish a blocked placeholder from a completed scenario. Mention any requested negative-test result separately.

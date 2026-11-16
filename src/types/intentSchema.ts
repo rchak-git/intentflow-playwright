@@ -136,15 +136,15 @@ export const StandardStepSchema = z.object({
   step: z.string().optional(),
   fieldKey: z.string({ message: "'fieldKey' is required for standard steps" }),
   widgetType: z.enum([
-    "WEB_TABLE", 
-    "TEXTBOX", 
-    "BUTTON", 
-    "DROPDOWN", 
-    "CHECKBOX", 
-    "RADIO_GROUP", 
-    "SELECT", 
-    "CUSTOM_SELECT", 
-    "CONTAINER", 
+    "WEB_TABLE",
+    "TEXTBOX",
+    "BUTTON",
+    "DROPDOWN",
+    "CHECKBOX",
+    "RADIO_GROUP",
+    "SELECT",
+    "CUSTOM_SELECT",
+    "CONTAINER",
     "CARD"
   ]).optional(),
   intent: IntentSchema,
@@ -177,16 +177,17 @@ export const RefScenarioStepSchema = z.object({
   data: z.record(z.string(), z.unknown()).optional().describe("Parameter forwarding variable map"),
 });
 
-// 4. RefProfile Precondition Item Schema (Rule 2.3 & Rule 2.5)
+// 4. RefProfile Precondition Item Schema
 export const RefProfilePreconditionSchema = z.object({
   step: z.string().optional(),
   refProfile: z.string({ message: "'refProfile' key is required in preconditions" }),
   data: z.record(z.string(), z.unknown()).optional().describe("Local data overrides for referenced precondition profile"),
+  overrides: z.record(z.string(), z.string()).optional().describe("Optional upstream precondition profile swaps (e.g. Admin Login -> Student Login)"),
 });
 
 // Discriminated Polymorphic Pipeline Step Schema
 export const PipelineStepSchema = z.union([
-  StandardStepSchema, 
+  StandardStepSchema,
   SdetHandoffStepSchema,
   RefScenarioStepSchema,
   RefProfilePreconditionSchema // Restored for backwards compatibility during resolution
@@ -201,14 +202,14 @@ export const TestScenarioSchema = z.object({
 });
 
 /**
- * Path 2 Dynamic Profile Contract (Rule 2.2, 2.3, 2.5, 2.6)
+ * Path 2 Dynamic Profile Contract
  */
 export const TestDataProfileSchema = z.object({
   description: z.string().optional(),
-  preconditions: z.array(RefProfilePreconditionSchema).optional().describe("Top-level precondition profiles (Rule 2.5)"),
+  preconditions: z.array(RefProfilePreconditionSchema).optional().describe("Top-level precondition profiles"),
   refScenario: z.string().optional(),
   refProfile: z.string().optional().describe("Legacy profile reference for backward compatibility"),
-  steps: z.array(PipelineStepSchema).optional().describe("Inline step sequence executed directly by single-use profile (Rule 2.2)"),
+  steps: z.array(PipelineStepSchema).optional().describe("Inline step sequence executed directly by single-use profile"),
   data: z.record(z.string(), z.unknown()).optional(),
 }).refine(
   (data) => Boolean((data.steps && data.steps.length > 0) || data.refScenario || data.refProfile),

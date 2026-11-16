@@ -1,10 +1,10 @@
 // src/engine/commandDispatcher.ts
 import { test, Page } from '@playwright/test';
 import type { UiMapEntry } from '../types/uiMapTypes';
-import { 
-  SuiteSpec, 
-  PipelineStep, 
-  StepParams 
+import {
+  SuiteSpec,
+  PipelineStep,
+  StepParams
 } from '../types/intentSchema';
 import { resolveScenarioSteps } from './yamlLoader';
 import { globalContextStore } from './contextStore';
@@ -51,7 +51,7 @@ export class CommandDispatcher {
 
   /**
    * Executes a named data profile directly from a SuiteSpec.
-   * Enforces Rule 2.3 (Shallow Preconditions) and Rule 2.5 (Explicit Setup Stacking).
+   * Recursively resolves upstream precondition chains with deduplication, data bubbling, and profile overrides.
    */
   public async executeProfile(
     page: Page,
@@ -71,14 +71,19 @@ export class CommandDispatcher {
       throw new Error(`[IntentFlow] Profile '${profileName}' not found in suite profiles.`);
     }
 
-    // 1. Execute Top-Level Preconditions Shallowly (Rule 2.3 & Rule 2.5)
+    // 1. Execute Preconditions Recursively (with cycle protection, deduplication, and overrides)
+    const executedProfiles = new Set<string>();
     if (profile.preconditions && profile.preconditions.length > 0) {
       for (const precondition of profile.preconditions) {
-        await test.step(`Precondition [${precondition.refProfile}]`, async () => {
-          // Precondition data frame is strictly isolated from parent context
-          const preconditionData = precondition.data || {};
-          await this.executePreconditionProfileShallow(page, precondition.refProfile, preconditionData, activeSuite);
-        });
+        await this.executePreconditionProfileRecursive(
+          page,
+          precondition.refProfile,
+          precondition.data || {},
+          (precondition as any).overrides || {},
+          activeSuite,
+          executedProfiles,
+          new Set<string>()
+        );
       }
     }
 
@@ -88,7 +93,7 @@ export class CommandDispatcher {
     let steps: PipelineStep[] = [];
     const profileData = profile.data || {};
 
-    // 2. Resolve steps: Path 2 supports direct profile 'steps:' OR 'refScenario' OR legacy 'refProfile'
+    // 2. Resolve steps: supports direct profile 'steps:' OR 'refScenario' OR legacy 'refProfile'
     if (profile.steps && profile.steps.length > 0) {
       steps = profile.steps;
     } else if (profile.refScenario) {
@@ -99,7 +104,8 @@ export class CommandDispatcher {
         throw new Error(`[IntentFlow] Referenced profile '${profile.refProfile}' not found.`);
       }
       const mergedData = { ...(targetProfile.data || {}), ...profileData };
-      const targetSteps = targetProfile.steps || resolveScenarioSteps(targetProfile.refScenario!, sharedScenarios, suiteProfiles);
+      const targetSteps =
+        targetProfile.steps || resolveScenarioSteps(targetProfile.refScenario!, sharedScenarios, suiteProfiles);
       await this.executeScenario(page, targetSteps, mergedData);
       return;
     } else {
@@ -110,37 +116,87 @@ export class CommandDispatcher {
   }
 
   /**
-   * Rule 2.3 Shallow Precondition Runner:
-   * Executes referenced precondition profiles WITHOUT recursing into their inner preconditions.
+   * Recursive Precondition Runner:
+   * - Walks upstream preconditions depth-first (Login -> Home -> Dashboard -> Assignments)
+   * - Deduplicates already-executed profiles (preserving backward compatibility with flat precondition lists)
+   * - Propagates data overrides and optional profile-swap overrides down the chain
    */
-  private async executePreconditionProfileShallow(
+  private async executePreconditionProfileRecursive(
     page: Page,
     refProfileKey: string,
-    preconditionData: Record<string, any>,
-    currentSuite: SuiteSpec
+    inheritedData: Record<string, any>,
+    profileOverrides: Record<string, string>,
+    currentSuite: SuiteSpec,
+    executedProfiles: Set<string>,
+    callStack: Set<string>
   ): Promise<void> {
-    let targetSuite = currentSuite;
-    let targetProfileName = refProfileKey;
+    // Apply profile-swap override if specified (e.g., Admin Login -> Student Login)
+    const effectiveRef =
+      profileOverrides[refProfileKey] ||
+      (refProfileKey.includes('.') ? profileOverrides[refProfileKey.split('.')[1]] : undefined) ||
+      refProfileKey;
 
-    // Handle cross-suite dot notation (e.g., "moodleLoginSteps.td_successfulStudentLogin")
-    if (refProfileKey.includes('.')) {
-      const [, profileName] = refProfileKey.split('.');
-      targetProfileName = profileName;
+    const targetProfileName = effectiveRef.includes('.')
+      ? effectiveRef.split('.')[1]
+      : effectiveRef;
+
+    if (callStack.has(targetProfileName)) {
+      throw new Error(
+        `[IntentFlow] Circular precondition cycle detected: '${[...callStack, targetProfileName].join(' -> ')}'`
+      );
     }
 
-    const profile = targetSuite.profiles?.[targetProfileName];
-    if (!profile) {
-      console.warn(`[IntentFlow Precondition] Profile '${targetProfileName}' referenced in precondition not found directly in active suite profiles.`);
+    // Skip if already executed earlier in a flat multi-precondition list
+    if (executedProfiles.has(targetProfileName)) {
       return;
     }
 
-    const sharedScenarios = targetSuite.sharedScenarios || {};
-    const suiteProfiles = targetSuite.profiles || {};
-    const mergedPreconditionData = { ...(profile.data || {}), ...preconditionData };
+    const profile = currentSuite.profiles?.[targetProfileName];
+    if (!profile) {
+      console.warn(
+        `[IntentFlow Precondition] Profile '${targetProfileName}' referenced in precondition not found directly in active suite profiles.`
+      );
+      return;
+    }
 
-    // SHALLOW EXECUTION: Resolve steps/scenario directly without calling executeProfile or running profile.preconditions
-    const steps = profile.steps || resolveScenarioSteps(profile.refScenario!, sharedScenarios, suiteProfiles);
-    await this.executeScenario(page, steps, mergedPreconditionData);
+    const nextCallStack = new Set(callStack);
+    nextCallStack.add(targetProfileName);
+
+    // 1. Recursively run upstream preconditions first
+    if (profile.preconditions && profile.preconditions.length > 0) {
+      for (const upstreamPre of profile.preconditions) {
+        const mergedUpstreamData = {
+          ...(upstreamPre.data || {}),
+          ...inheritedData,
+        };
+        const mergedUpstreamOverrides = {
+          ...((upstreamPre as any).overrides || {}),
+          ...profileOverrides,
+        };
+        await this.executePreconditionProfileRecursive(
+          page,
+          upstreamPre.refProfile,
+          mergedUpstreamData,
+          mergedUpstreamOverrides,
+          currentSuite,
+          executedProfiles,
+          nextCallStack
+        );
+      }
+    }
+
+    // 2. Execute this precondition's own steps
+    const sharedScenarios = currentSuite.sharedScenarios || {};
+    const suiteProfiles = currentSuite.profiles || {};
+    const mergedPreconditionData = { ...(profile.data || {}), ...inheritedData };
+
+    await test.step(`Precondition [${effectiveRef}]`, async () => {
+      const steps =
+        profile.steps || resolveScenarioSteps(profile.refScenario!, sharedScenarios, suiteProfiles);
+      await this.executeScenario(page, steps, mergedPreconditionData);
+    });
+
+    executedProfiles.add(targetProfileName);
   }
 
   /**

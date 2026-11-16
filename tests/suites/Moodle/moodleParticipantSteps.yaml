@@ -17,8 +17,6 @@ profiles:
   td_verifyCourseParticipantsList:
     description: "Execution profile: Verifies course participants table visibility and presence of specific users"
     preconditions:
-      - refProfile: "moodleLoginSteps.td_successfulStudentLogin"
-      - refProfile: "moodleHomePageSteps.td_navigateToMyCourses"
       - refProfile: "moodleCourseSteps.td_navigateToCourseParticipants"
     steps:
       - step: "Verify the Participants table is visible"
@@ -45,8 +43,6 @@ profiles:
   td_verifyParticipantsTableSummary:
     description: "Execution profile: Validates full-table summary specs (visibility, row count, content)"
     preconditions:
-      - refProfile: "moodleLoginSteps.td_successfulStudentLogin"
-      - refProfile: "moodleHomePageSteps.td_navigateToMyCourses"
       - refProfile: "moodleCourseSteps.td_navigateToCourseParticipants"
     steps:
       - step: "Verify the Participants table is visible"

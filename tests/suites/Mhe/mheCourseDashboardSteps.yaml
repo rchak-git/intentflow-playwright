@@ -1,0 +1,32 @@
+description: "Course Dashboard navigation and schedule verification workflows inside MHE Course Player"
+uiMap: "MheCourseDashboardUiMap"
+includes:
+  - "mhe_LoginSteps.yaml"
+  - "mheHomePageSteps.yaml"
+
+sharedScenarios:
+  executeOpenAssignmentsTab:
+    description: "Clicks the Assignments tab on the Course Dashboard navigation bar"
+    steps:
+      - step: "Click the Assignments tab on the course navigation bar"
+        fieldKey: "mhe_courseDashboard_assignmentsTabLink"
+        intent: "action"
+        params:
+          subIntent: "click"
+
+profiles:
+  td_navigateToAssignments:
+    description: "Logs in as Admin, opens course from Home Directory, and navigates to Assignments tab"
+    preconditions:
+      - refProfile: "mhe_LoginSteps.td_successfulAdminLogin"
+      - refProfile: "mheHomePageSteps.td_searchAndOpenCourseDashboard"
+        data:
+          courseName: "Project Assignment flow"
+    steps:
+      - refScenario: "executeOpenAssignmentsTab"
+      - step: "Verify the course title remains visible on the Assignments view"
+        fieldKey: "mhe_courseDashboard_courseTitleLabel"
+        intent: "verify"
+        params:
+          subIntent: "contains"
+          value: "Project Assignment flow"

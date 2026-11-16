@@ -1,53 +1,83 @@
 import { BaseControl } from './baseControl';
 import { Locator, expect } from '@playwright/test';
 import type { StepParams, SubIntent, Scalar } from '../types/intentSchema';
-import { BooleanStateSchema } from '../types/intentSchema';
 
 export class CardControl extends BaseControl {
   /**
-   * Resolves the target card container and optional child sub-control locator.
+   * Resolves the target card container (optionally inside frameSelector)
+   * and scopes down to the requested childWidget subSelector.
    */
-private getCardLocator(params?: StepParams): Locator {
+  private getCardLocator(params?: StepParams): Locator {
     const anchorText = params?.anchorText || this.params?.anchorText;
     const childWidget = params?.childWidget || this.params?.childWidget;
 
-    // 1. Always resolve the root card container from uiEntry.selector
-    // (avoids BaseControl pre-resolving this.locator to the childWidget subSelector)
+    const rootScope =
+      'frameSelector' in this.uiEntry && this.uiEntry.frameSelector
+        ? this.page.frameLocator(this.uiEntry.frameSelector)
+        : this.page;
+
     let cardContainer =
       'selector' in this.uiEntry && this.uiEntry.selector
-        ? this.page.locator(this.uiEntry.selector)
+        ? rootScope.locator(this.uiEntry.selector)
         : this.locator;
 
     if (anchorText) {
       cardContainer = cardContainer.filter({ hasText: anchorText });
     }
 
-    // 2. Locate childWidget inside the anchored card container
     if (childWidget && 'subSelectors' in this.uiEntry && this.uiEntry.subSelectors?.[childWidget]) {
       return cardContainer.locator(this.uiEntry.subSelectors[childWidget]);
     }
 
-    // 3. Fallback to the card container locator itself
     return cardContainer;
   }
 
- public override async action(params?: StepParams): Promise<void> {
+  public override async action(params?: StepParams): Promise<void> {
     if (params) this.setParams(params);
     const targetParams = params || this.params;
     const rawSubIntent: SubIntent = targetParams?.subIntent || 'click';
+    const targetLocator = this.getCardLocator(targetParams);
 
-    // Normalize 'clickSubControl' to 'click' so BaseControl handles click, jsClick, hover, etc. uniformly
-    const normalizedSubIntent: SubIntent =
-      rawSubIntent === 'clickSubControl' ? 'click' : rawSubIntent;
+    switch (rawSubIntent) {
+      case 'click':
+      case 'clickSubControl':
+        await targetLocator.click({
+          force: targetParams?.force,
+          timeout: targetParams?.timeout,
+        });
+        break;
 
-    const originalLocator = this.locator;
-    try {
-      this.locator = this.getCardLocator(targetParams);
-      await super.action({ ...targetParams, subIntent: normalizedSubIntent });
-    } finally {
-      this.locator = originalLocator;
+      case 'dblClick':
+        await targetLocator.dblclick({
+          force: targetParams?.force,
+          timeout: targetParams?.timeout,
+        });
+        break;
+
+      case 'hover':
+        await targetLocator.hover({
+          force: targetParams?.force,
+          timeout: targetParams?.timeout,
+        });
+        break;
+
+      case 'jsClick':
+        await targetLocator.evaluate((el) => (el as HTMLElement).click());
+        break;
+
+      default: {
+        const originalLocator = this.locator;
+        try {
+          this.locator = targetLocator;
+          await super.action({ ...targetParams, subIntent: rawSubIntent });
+        } finally {
+          this.locator = originalLocator;
+        }
+        break;
+      }
     }
   }
+
   public override async verify(
     subIntent: SubIntent = 'contains',
     expectedValue?: Scalar | Scalar[],
@@ -61,16 +91,25 @@ private getCardLocator(params?: StepParams): Locator {
     const expectedStr = rawVal !== undefined ? String(rawVal) : '';
 
     switch (targetSubIntent) {
+      case 'count':
+        await expect(targetLocator).toHaveCount(Number(rawVal), {
+          timeout: targetParams?.timeout,
+        });
+        break;
+
       case 'state': {
         const stateStr = String(rawVal ?? 'visible').toLowerCase();
+        // Check the first card when no anchorText is specified to avoid strict-mode errors on multi-card grids
+        const stateTarget = targetParams?.anchorText ? targetLocator : targetLocator.first();
+
         if (stateStr === 'visible' || stateStr === 'true') {
-          await expect(targetLocator).toBeVisible();
+          await expect(stateTarget).toBeVisible({ timeout: targetParams?.timeout });
         } else if (stateStr === 'hidden' || stateStr === 'false') {
-          await expect(targetLocator).toBeHidden();
+          await expect(stateTarget).toBeHidden({ timeout: targetParams?.timeout });
         } else if (stateStr === 'enabled') {
-          await expect(targetLocator).toBeEnabled();
+          await expect(stateTarget).toBeEnabled({ timeout: targetParams?.timeout });
         } else if (stateStr === 'disabled') {
-          await expect(targetLocator).toBeDisabled();
+          await expect(stateTarget).toBeDisabled({ timeout: targetParams?.timeout });
         } else {
           throw new Error(`[IntentFlow] Unsupported card state assertion: '${rawVal}'`);
         }
@@ -78,12 +117,12 @@ private getCardLocator(params?: StepParams): Locator {
       }
 
       case 'equals':
-        await expect(targetLocator).toHaveText(expectedStr);
+        await expect(targetLocator).toHaveText(expectedStr, { timeout: targetParams?.timeout });
         break;
 
       case 'contains':
       default:
-        await expect(targetLocator).toContainText(expectedStr);
+        await expect(targetLocator).toContainText(expectedStr, { timeout: targetParams?.timeout });
         break;
     }
   }
