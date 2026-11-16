@@ -16,7 +16,7 @@ import { CheckboxControl } from '../controls/checkboxControl';
 import { TableControl } from '../controls/tableControl';
 import { SearchControl } from '../controls/searchControl';
 import { BaseControl } from '../controls/baseControl';
-import { UI_MAP_REGISTRY, GLOBAL_UI_MAP } from '../registries/UiMapIndex';
+import { resolveSuiteUiMaps } from './suiteUiMaps';
 import { SelectControl } from '../controls/selectControl';
 import { CustomSelectControl } from '../controls/customSelectControl';
 import { RadioGroupControl } from '../controls/RadioGroupControl';
@@ -40,34 +40,13 @@ export class CommandDispatcher {
    * Factory method to dynamically load and merge UI Map(s) declared in Suite YAML header.
    */
   public static async fromSuite(suite: SuiteSpec): Promise<CommandDispatcher> {
-    let mergedUiMap: Record<string, UiMapEntry> = {};
-
-    const rawMapPaths = suite?.uiMap
-      ? Array.isArray(suite.uiMap)
-        ? suite.uiMap
-        : [suite.uiMap]
-      : [];
-
-    if (rawMapPaths.length > 0) {
-      for (const rawMapPath of rawMapPaths) {
-        if (!rawMapPath) continue;
-        const resolvedKey = rawMapPath.replace(/^.*[\\/]/, '').replace(/\.(ts|js|json|map)$/, '');
-        const mapExport = UI_MAP_REGISTRY[rawMapPath] || UI_MAP_REGISTRY[resolvedKey];
-
-        if (mapExport) {
-          mergedUiMap = { ...mergedUiMap, ...mapExport };
-        } else {
-          console.warn(
-            `[IntentFlow] Specific UI Map key '${rawMapPath}' not found in registry. Falling back to global UI Map lookup.`
-          );
-        }
-      }
+    const { uiMap, missingMaps } = resolveSuiteUiMaps(suite);
+    for (const rawMapPath of missingMaps) {
+      console.warn(
+        `[IntentFlow] Specific UI Map key '${rawMapPath}' not found in registry. Falling back to global UI Map lookup.`
+      );
     }
-
-    // Merge GLOBAL_UI_MAP as a fallback layer so cross-page upstream dependencies resolve automatically
-    mergedUiMap = { ...GLOBAL_UI_MAP, ...mergedUiMap };
-
-    return new CommandDispatcher(mergedUiMap, suite);
+    return new CommandDispatcher(uiMap, suite);
   }
 
   /**

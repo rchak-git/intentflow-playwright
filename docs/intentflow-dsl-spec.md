@@ -1,5 +1,17 @@
 # IntentFlow DSL Specification v1.0
 
+## Preflight validation
+
+Before running a profile, check its suite and references without launching a browser:
+
+```powershell
+npx tsx src\cli\preflight.ts --suite tests\suites\pilot_moodle\pilotMoodleParticipantsSteps.yaml --profile td_pilotAdminVerifyCourseParticipants
+```
+
+Omit `--profile` to check all profiles in the merged suite. The JSON report lists missing UI maps, field and composite keys, profiles, scenarios, unsupported operations, and dynamic keys that cannot be verified. Findings or suite-loading errors produce a nonzero exit code.
+
+Preflight follows the dispatcher's global-map fallback and shallow precondition execution. It does not check live locators, credentials, runtime-injected data, or every parameter and assertion; a clean report is not a test pass. Schema or include errors are reported by the suite loader before static checks run.
+
 ## 1. Architectural Philosophy
 
 `IntentFlow` is a declarative, polymorphic, and standardized domain-specific language (DSL) engineered to minimize cognitive load for non-technical QA authors and guarantee clean, deterministic AI artifact generation.

@@ -13,6 +13,8 @@ The YAML editor is an optional inspection tool, not an execution oracle. Its rec
 
 ## Preflight and Blockers
 
+Run `npx tsx src/cli/preflight.ts --suite <suite-path> --profile <profile-name>` against existing or newly authored suites. Omit `--profile` to inspect all merged profiles. The JSON report lists map, profile, scenario, and operation issues; a nonzero exit means findings or a loading error. The check is static: it cannot verify live controls, credentials, runtime-injected data, or every parameter and assertion. Resolve its findings, and still perform the manual checks below.
+
 Before writing executable profiles, check:
 
 - Every non-page target has an unambiguous, existing UI Map entry, and its requested operation is actually supported by the relevant control and schema. Verify table column keys, composite child selectors, and exact data types where used. A map entry alone does not prove a control is currently present on a live site.
@@ -59,6 +61,6 @@ For missing capabilities, report `UNSUPPORTED_OPERATIONS` with scenario, step, r
    npx tsx -e "import { loadYamlSuite } from './src/engine/yamlLoader'; loadYamlSuite(process.argv[1]); console.log('Suite loaded successfully');" <suite-path>
    ```
 
-   This checks loading and schema validation, not all references or runtime semantics. Check the preflight items separately against the merged suite, registry, dispatcher, and controls; report any check that could not be completed.
+   This checks loading and schema validation, not all references or runtime semantics. Also run the preflight command above for each changed profile and check the remaining preflight items against the merged suite, registry, dispatcher, and controls; report any check that could not be completed.
 2. Run `npx tsc --noEmit` when TypeScript files change. Run the exact positive spec methods described above and capture their results. Do not replace browser execution with test discovery or type-checking.
 3. In the final response list changed files, reused and created profiles, missing map entries, missing prerequisites/data, unsupported behavior, and a per-profile result: **passed**, **failed**, **blocked**, or **not run**, with the reason and test command. Distinguish a blocked placeholder from a completed scenario. Mention any requested negative-test result separately.

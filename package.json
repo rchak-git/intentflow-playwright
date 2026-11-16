@@ -5,6 +5,7 @@
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "typecheck": "tsc --noEmit",
+    "preflight:test": "tsx --test src/engine/preflight.test.ts",
     "docs:generate": "tsx scripts/generateDocs.ts",
     "yaml-editor": "vite build --config src/tools/yaml-editor/vite.config.ts && tsx src/tools/yaml-editor/server.ts",
     "yaml-editor:test": "tsx --test src/tools/yaml-editor/server.test.ts src/tools/yaml-editor/resolveSteps.test.ts"
