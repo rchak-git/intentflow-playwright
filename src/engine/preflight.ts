@@ -41,8 +41,25 @@ function operationProblem(step: StandardStep, widget: WidgetType, pageTarget: bo
     return `Page operation ${intent}/${sub ?? '(default)'} is not implemented for fieldKey page.`;
   }
 
+  if (widget === 'FILE_UPLOAD') {
+    if (params?.storeAs) return 'FILE_UPLOAD does not support storing a control value.';
+    if (intent === 'populate' && (!sub || sub === 'setValue')) {
+      return typeof params?.value === 'string' && params.value.trim()
+        ? undefined : 'FILE_UPLOAD requires a non-empty file path string.';
+    }
+    if (intent === 'verify' && sub === 'state') return undefined;
+    return `Operation ${intent}/${sub ?? '(default)'} is not supported on FILE_UPLOAD.`;
+  }
+
+  if (widget === 'RICH_TEXT' && intent === 'populate') {
+    if (sub && sub !== 'setValue') return `Populate sub-intent '${sub}' is not implemented on RICH_TEXT.`;
+    return typeof params?.value === 'string' ? undefined : 'RICH_TEXT requires a plain-text string value.';
+  }
+
   if (intent === 'custom') return 'Custom control handlers do not implement an operation.';
   if (intent === 'extract') {
+    if (sub === 'tableData' && (widget === 'WEB_TABLE' || widget === 'TABLE') &&
+        !params?.anchorText && !params?.column && !params?.targetColumn) return undefined;
     return sub ? `Extract sub-intent '${sub}' is not an implemented operation.` : undefined;
   }
   if (widget === 'PAGE') {
@@ -81,20 +98,25 @@ function operationProblem(step: StandardStep, widget: WidgetType, pageTarget: bo
   }
   if (intent === 'verify') {
     const verification = sub ?? 'equals';
+    if (widget === 'RICH_TEXT' && (verification === 'equals' || verification === 'contains') &&
+        typeof params?.value !== 'string') {
+      return 'RICH_TEXT verification requires a plain-text string value.';
+    }
     const supported = widget === 'WEB_TABLE' || widget === 'TABLE'
       ? ['state', 'count', 'cellText', 'equals', 'contains', 'allRowCheckboxesState']
       : widget === 'CHECKBOX'
         ? ['equals', 'state']
-        : [...baseVerifications, ...(['RADIO_GROUP', 'CUSTOM_SELECT'].includes(widget) ? ['optionsContains'] : [])];
+        : [
+            ...baseVerifications,
+            ...(['RADIO_GROUP', 'CUSTOM_SELECT'].includes(widget) ? ['optionsContains'] : []),
+            ...(widget === 'CARD' ? ['count'] : []),
+          ];
     if (!supported.includes(verification)) return `Verification '${verification}' is not implemented on ${widget}.`;
     if (widget === 'CUSTOM_SELECT' && verification === 'state' && params?.value === undefined) {
       return 'CUSTOM_SELECT state without a value performs no assertion.';
     }
     if (verification !== 'state' && verification !== 'allRowCheckboxesState' && params?.value === undefined) {
       return `Verification '${verification}' requires an expected value.`;
-    }
-    if (widget === 'CUSTOM_SELECT' && verification === 'equals') {
-      return 'CUSTOM_SELECT equals performs a contains assertion, not an equality assertion.';
     }
     if (widget === 'SELECT' && verification === 'equals') {
       return 'SELECT equals also accepts a partial match of the selected option text.';
@@ -113,7 +135,7 @@ function findScenario(suite: SuiteSpec, name: string) {
   return scenarios[name] ?? scenarios[name.split('.').pop() ?? name];
 }
 
-function normalizeProfileName(refKey: string): string {
+function scenarioProfileName(refKey: string): string {
   return refKey.includes('#')
     ? refKey.split('#')[1]
     : refKey.includes('.')
@@ -121,16 +143,33 @@ function normalizeProfileName(refKey: string): string {
       : refKey;
 }
 
+function resolveStaticValue(value: unknown, data: Record<string, unknown>, seen = new Set<string>()): unknown {
+  if (typeof value !== 'string' || !value.startsWith('${data:')) return value;
+  const match = value.match(/^\$\{data:([a-zA-Z0-9_]+)(?:\s*\|\|\s*(?:'([^']*)'|"([^"]*)"|([^}\s]+)))?\}$/);
+  if (!match) return undefined;
+  const [, key, single, double, raw] = match;
+  if (seen.has(key)) return undefined;
+  const found = data[key];
+  if (found === undefined || found === null || found === '') return single ?? double ?? raw;
+  return resolveStaticValue(found, data, new Set([...seen, key]));
+}
+
 /** Performs static checks along the recursive profile and precondition paths used by the dispatcher. */
-export function preflightSuite(suite: SuiteSpec, profileName?: string): PreflightReport {
-  const { uiMap, missingMaps } = resolveSuiteUiMaps(suite);
+export function preflightSuite(
+  suite: SuiteSpec,
+  profileName?: string,
+  options: { uiMap?: Record<string, UiMapEntry> } = {}
+): PreflightReport {
+  const resolvedMaps = resolveSuiteUiMaps(suite);
+  const uiMap = options.uiMap ?? resolvedMaps.uiMap;
+  const { missingMaps } = resolvedMaps;
   const profiles = suite.profiles ?? {};
   const names = profileName ? [profileName] : Object.keys(profiles);
   const issues: PreflightIssue[] = missingMaps.map(name => ({
     category: 'MISSING_UI_MAPS',
     profile: '',
     location: 'uiMap',
-    message: `UI map '${name}' is not registered; runtime falls back to the global map.`,
+    message: `UI map '${name}' is not registered.`,
   }));
   const report: PreflightReport = { profilesChecked: names, issues };
 
@@ -142,16 +181,17 @@ export function preflightSuite(suite: SuiteSpec, profileName?: string): Prefligh
     add('MISSING_PROFILES', '', 'profiles', 'The merged suite contains no profiles.');
   }
 
-  function checkStep(step: StandardStep, profile: string, location: string) {
-    const field = step.fieldKey;
+  function checkStep(step: StandardStep, profile: string, location: string, data: Record<string, unknown>) {
+    const resolvedField = resolveStaticValue(step.fieldKey, data);
     if (step.intent === 'REQUIRES_SDET_HANDOFF') {
       add('UNSUPPORTED_OPERATIONS', profile, location, 'Step requires SDET handoff and cannot execute.');
       return;
     }
-    if (field.includes('${')) {
+    if (typeof resolvedField !== 'string' || resolvedField.includes('${')) {
       add('UNVERIFIED', profile, location, 'Dynamic fieldKey cannot be verified statically.');
       return;
     }
+    const field = resolvedField;
     const pageTarget = field.toLowerCase() === 'page';
     const entry: UiMapEntry | undefined = pageTarget ? { widgetType: 'PAGE' } : uiMap[field];
     if (!entry) {
@@ -187,16 +227,30 @@ export function preflightSuite(suite: SuiteSpec, profileName?: string): Prefligh
     }
   }
 
-  function walkSteps(steps: PipelineStep[], profile: string, location: string, stack: string[], resolving: boolean) {
+  function walkSteps(
+    steps: PipelineStep[], profile: string, location: string, stack: string[],
+    resolving: boolean, data: Record<string, unknown>, stepContext: Record<string, unknown> = {}
+  ) {
     steps.forEach((step, index) => {
       const here = `${location}.steps[${index + 1}]${step.step ? ` (${step.step})` : ''}`;
       if ('intent' in step) {
-        checkStep(step, profile, here);
+        checkStep(step, profile, here, data);
       } else if ('refScenario' in step) {
-        walkScenario(step.refScenario, profile, here, stack);
+        const forwarded: Record<string, unknown> = {};
+        if (!resolving) {
+          for (const [key, value] of Object.entries(step.data ?? {})) {
+            forwarded[key] = resolveStaticValue(value, data);
+          }
+        }
+        if (resolving) {
+          walkScenario(step.refScenario, profile, here, stack, data, { ...step.data, ...stepContext });
+        } else {
+          walkScenario(step.refScenario, profile, here, stack, { ...data, ...stepContext, ...forwarded });
+        }
       } else if (resolving) {
-        const name = normalizeProfileName(step.refProfile);
-        walkReferencedProfile(name, profile, here, stack);
+        const name = scenarioProfileName(step.refProfile);
+        const context = { ...profiles[name]?.data, ...step.data, ...stepContext };
+        walkReferencedProfile(name, profile, here, stack, {}, new Set(), false, data, context);
       } else {
         add('UNSUPPORTED_OPERATIONS', profile, here, 'Inline refProfile is not dispatched as a profile reference.');
         if (!profiles[step.refProfile]) {
@@ -206,7 +260,10 @@ export function preflightSuite(suite: SuiteSpec, profileName?: string): Prefligh
     });
   }
 
-  function walkScenario(name: string, profile: string, location: string, stack: string[]) {
+  function walkScenario(
+    name: string, profile: string, location: string, stack: string[],
+    data: Record<string, unknown>, stepContext: Record<string, unknown> = {}
+  ) {
     const scenario = findScenario(suite, name);
     if (!scenario) {
       add('MISSING_SCENARIOS', profile, location, `Scenario '${name}' is not in the merged suite.`);
@@ -217,7 +274,7 @@ export function preflightSuite(suite: SuiteSpec, profileName?: string): Prefligh
       add('UNSUPPORTED_OPERATIONS', profile, location, `Cyclic scenario reference '${name}'.`);
       return;
     }
-    walkSteps(Array.isArray(scenario) ? scenario : scenario.steps, profile, `${location} -> ${name}`, [...stack, marker], true);
+    walkSteps(Array.isArray(scenario) ? scenario : scenario.steps, profile, `${location} -> ${name}`, [...stack, marker], true, data, stepContext);
   }
 
   function walkReferencedProfile(
@@ -226,13 +283,18 @@ export function preflightSuite(suite: SuiteSpec, profileName?: string): Prefligh
     location: string,
     stack: string[],
     overrides: Record<string, string> = {},
-    visited: Set<string> = new Set()
+    visited: Set<string> = new Set(),
+    includePreconditions = true,
+    inheritedData: Record<string, unknown> = {},
+    stepContext: Record<string, unknown> = {}
   ) {
     const effectiveRef =
       overrides[rawRefKey] ||
       (rawRefKey.includes('.') ? overrides[rawRefKey.split('.')[1]] : undefined) ||
       rawRefKey;
-    const name = normalizeProfileName(effectiveRef);
+    const name = includePreconditions && effectiveRef.includes('.')
+      ? effectiveRef.split('.')[1]
+      : effectiveRef;
 
     const marker = `profile:${name}`;
     if (stack.includes(marker)) {
@@ -253,9 +315,9 @@ export function preflightSuite(suite: SuiteSpec, profileName?: string): Prefligh
     const next = [...stack, marker];
 
     // Recursively validate upstream preconditions first (matching CommandDispatcher)
-    for (const [index, upstreamPre] of (target.preconditions ?? []).entries()) {
+    for (const [index, upstreamPre] of (includePreconditions ? target.preconditions ?? [] : []).entries()) {
       const mergedOverrides = {
-        ...((upstreamPre as any).overrides || {}),
+        ...(upstreamPre.overrides || {}),
         ...overrides,
       };
       walkReferencedProfile(
@@ -264,12 +326,15 @@ export function preflightSuite(suite: SuiteSpec, profileName?: string): Prefligh
         `${location} -> ${name}.preconditions[${index + 1}]`,
         next,
         mergedOverrides,
-        visited
+        visited,
+        true,
+        { ...(upstreamPre.data ?? {}), ...inheritedData }
       );
     }
 
-    if (target.steps) walkSteps(target.steps, profile, `${location} -> ${name}`, next, false);
-    else if (target.refScenario) walkScenario(target.refScenario, profile, `${location} -> ${name}`, next);
+    const data = includePreconditions ? { ...(target.data ?? {}), ...inheritedData } : inheritedData;
+    if (target.steps) walkSteps(target.steps, profile, `${location} -> ${name}`, next, false, data, stepContext);
+    else if (target.refScenario) walkScenario(target.refScenario, profile, `${location} -> ${name}`, next, data, stepContext);
     else add('UNSUPPORTED_OPERATIONS', profile, location, `Referenced profile '${name}' must have steps or refScenario.`);
 
     visited.add(name);
@@ -288,14 +353,20 @@ export function preflightSuite(suite: SuiteSpec, profileName?: string): Prefligh
         name,
         `preconditions[${index + 1}]`,
         [`profile:${name}`],
-        (precondition as any).overrides || {},
-        visited
+        precondition.overrides || {},
+        visited,
+        true,
+        precondition.data ?? {}
       );
     }
     const location = `profile ${name}`;
-    if (profile.steps?.length) walkSteps(profile.steps, name, location, [`profile:${name}`], false);
-    else if (profile.refScenario) walkScenario(profile.refScenario, name, location, [`profile:${name}`]);
-    else if (profile.refProfile) walkReferencedProfile(profile.refProfile, name, location, [`profile:${name}`]);
+    const data = profile.data ?? {};
+    if (profile.steps?.length) walkSteps(profile.steps, name, location, [`profile:${name}`], false, data);
+    else if (profile.refScenario) walkScenario(profile.refScenario, name, location, [`profile:${name}`], data);
+    else if (profile.refProfile) {
+      const target = profiles[profile.refProfile];
+      walkReferencedProfile(profile.refProfile, name, location, [`profile:${name}`], {}, new Set(), false, { ...(target?.data ?? {}), ...data });
+    } else add('UNSUPPORTED_OPERATIONS', name, location, `Profile '${name}' must define steps, refScenario, or refProfile.`);
   }
   return report;
 }

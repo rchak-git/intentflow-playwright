@@ -6,9 +6,8 @@ address and reads `.yaml` files under `tests/suites`.
 
 Select a suite and a `td_` profile to inspect recursively expanded steps,
 including preconditions and nested scenario and profile references. This is a
-recursive preview: unlike the preview, the IntentFlow runner executes nested
-preconditions shallowly. The preview may therefore show repeated setup steps
-that the runner does not execute.
+recursive preview, not the execution oracle: it can differ from the runner's
+precondition deduplication, profile overrides, and reference resolution.
 
 Edit existing profile data, reference data and step `params.value` fields
 belonging to the selected suite. Editing a shared scenario affects all its

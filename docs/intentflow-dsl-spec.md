@@ -10,7 +10,41 @@ npx tsx src\cli\preflight.ts --suite tests\suites\pilot_moodle\pilotMoodlePartic
 
 Omit `--profile` to check all profiles in the merged suite. The JSON report lists missing UI maps, field and composite keys, profiles, scenarios, unsupported operations, and dynamic keys that cannot be verified. Findings or suite-loading errors produce a nonzero exit code.
 
-Preflight follows the dispatcher's global-map fallback and shallow precondition execution. It does not check live locators, credentials, runtime-injected data, or every parameter and assertion; a clean report is not a test pass. Schema or include errors are reported by the suite loader before static checks run.
+`executeProfile` also runs preflight automatically for the selected profile before executing browser steps. Findings, including `UNVERIFIED` dynamic keys, block execution. `CommandDispatcher.fromSuite(suite, { skipPreflight: true })` is an explicit opt-out for deliberate negative or handoff tests; missing maps and precondition profiles still fail. A Playwright page fixture may already have launched a browser before this check.
+
+Preconditions are resolved recursively with deduplication and data and profile overrides. Registered maps are merged over the global map; unknown map names fail. Preflight does not check live locators, credentials, runtime-injected data, or every parameter and assertion; a clean report is not a test pass. Schema or include errors are reported by the suite loader before static checks run.
+
+For `CUSTOM_SELECT`, `verify` with `equals` checks the full selected display text (using Playwright's whitespace normalization); use `contains` for a partial match.
+
+For `FILE_UPLOAD`, map an actual `input[type="file"]` and use `intent: populate`
+with `params.value` set to a non-empty local file path. Relative paths resolve
+from the process working directory. One file is selected; uploading or saving it
+in the application requires separate button actions. Missing files and invalid
+values fail explicitly.
+
+For `RICH_TEXT`, map the editable `contenteditable` element itself, including
+`frameSelector` when it is inside an iframe. `populate` with a string replaces
+its content with plain text; `action` with `clear` empties it. `verify` supports
+`equals`, `contains`, and `state`; text checks use rendered `innerText` and
+Playwright's whitespace normalization. `extract` returns trimmed `innerText`.
+Formatting, HTML input, and toolbar actions are not part of this control's
+plain-text contract.
+
+```yaml
+- fieldKey: editor
+  intent: populate
+  params:
+    value: "Assignment instructions"
+- fieldKey: editor
+  intent: verify
+  params:
+    subIntent: equals
+    value: "Assignment instructions"
+- fieldKey: editor
+  intent: action
+  params:
+    subIntent: clear
+```
 
 ## 1. Architectural Philosophy
 
@@ -59,7 +93,7 @@ select	SELECT, RADIO, DUAL_LISTBOX, TAB	Selects an option by value or visible te
 remove	DUAL_LISTBOX, TAG_INPUT	Deselects or removes an item.	value
 toggle	CHECKBOX, TOGGLE_SWITCH	Flips current state regardless of value.	—
 append	TEXTBOX, TEXTAREA	Appends text without clearing existing value.	value
-clear	TEXTBOX, FILE_UPLOAD	Resets input state.	—
+clear	TEXTBOX	Resets input state.	—
 pressKey	TEXTBOX, GLOBAL_PAGE	Triggers key event (e.g., Enter, Tab).	value
 hover / dblClick	BUTTON, LINK, ROW	Advanced mouse cursor gestures.	—
 equals / contains	ALL (under intent: verify)	Exact or partial string/value assertion.	value

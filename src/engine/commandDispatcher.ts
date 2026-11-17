@@ -9,6 +9,8 @@ import {
 import { resolveScenarioSteps } from './yamlLoader';
 import { globalContextStore } from './contextStore';
 import { TextBoxControl } from '../controls/textBoxControl';
+import { RichTextControl } from '../controls/richTextControl';
+import { FileUploadControl } from '../controls/fileUploadControl';
 import { ButtonControl } from '../controls/buttonControl';
 import { PageControl } from '../controls/pageControl';
 import { GenericControl } from '../controls/genericControl';
@@ -17,6 +19,7 @@ import { TableControl } from '../controls/tableControl';
 import { SearchControl } from '../controls/searchControl';
 import { BaseControl } from '../controls/baseControl';
 import { resolveSuiteUiMaps } from './suiteUiMaps';
+import { preflightSuite } from './preflight';
 import { SelectControl } from '../controls/selectControl';
 import { CustomSelectControl } from '../controls/customSelectControl';
 import { RadioGroupControl } from '../controls/RadioGroupControl';
@@ -31,7 +34,11 @@ export class CommandDispatcher {
   // Regex pattern matching: ${data:key} OR ${data:key || 'default_value'} OR ${data:key || "default_value"}
   private static TOKEN_REGEX = /^\$\{data:([a-zA-Z0-9_]+)(?:\s*\|\|\s*(?:'([^']*)'|"([^"]*)"|([^}\s]+)))?\}$/;
 
-  constructor(uiMap: Record<string, UiMapEntry> = {}, suite?: SuiteSpec) {
+  constructor(
+    uiMap: Record<string, UiMapEntry> = {},
+    suite?: SuiteSpec,
+    private readonly options: { skipPreflight?: boolean } = {}
+  ) {
     this.uiMap = uiMap;
     this.suite = suite;
   }
@@ -39,14 +46,15 @@ export class CommandDispatcher {
   /**
    * Factory method to dynamically load and merge UI Map(s) declared in Suite YAML header.
    */
-  public static async fromSuite(suite: SuiteSpec): Promise<CommandDispatcher> {
+  public static async fromSuite(
+    suite: SuiteSpec,
+    options: { skipPreflight?: boolean } = {}
+  ): Promise<CommandDispatcher> {
     const { uiMap, missingMaps } = resolveSuiteUiMaps(suite);
-    for (const rawMapPath of missingMaps) {
-      console.warn(
-        `[IntentFlow] Specific UI Map key '${rawMapPath}' not found in registry. Falling back to global UI Map lookup.`
-      );
+    if (missingMaps.length) {
+      throw new Error(`[IntentFlow] UI Map keys not found in registry: ${missingMaps.join(', ')}.`);
     }
-    return new CommandDispatcher(uiMap, suite);
+    return new CommandDispatcher(uiMap, suite, options);
   }
 
   /**
@@ -66,6 +74,18 @@ export class CommandDispatcher {
       );
     }
 
+    if (!this.options.skipPreflight) {
+      const report = preflightSuite(activeSuite, profileName, { uiMap: this.uiMap });
+      if (report.issues.length) {
+        throw new Error(
+          `[IntentFlow Preflight] Profile '${profileName}' cannot execute:\n` +
+          report.issues.map(issue => `- ${issue.category} at ${issue.location}: ${issue.message}`).join('\n')
+        );
+      }
+    } else {
+      console.warn(`[IntentFlow Preflight] Validation skipped for profile '${profileName}'.`);
+    }
+
     const profile = activeSuite.profiles?.[profileName];
     if (!profile) {
       throw new Error(`[IntentFlow] Profile '${profileName}' not found in suite profiles.`);
@@ -79,7 +99,7 @@ export class CommandDispatcher {
           page,
           precondition.refProfile,
           precondition.data || {},
-          (precondition as any).overrides || {},
+          precondition.overrides || {},
           activeSuite,
           executedProfiles,
           new Set<string>()
@@ -106,13 +126,13 @@ export class CommandDispatcher {
       const mergedData = { ...(targetProfile.data || {}), ...profileData };
       const targetSteps =
         targetProfile.steps || resolveScenarioSteps(targetProfile.refScenario!, sharedScenarios, suiteProfiles);
-      await this.executeScenario(page, targetSteps, mergedData);
+      await this.executeScenario(page, targetSteps, mergedData, activeSuite);
       return;
     } else {
       throw new Error(`[IntentFlow] Profile '${profileName}' must define 'steps', 'refScenario', or 'refProfile'.`);
     }
 
-    await this.executeScenario(page, steps, profileData);
+    await this.executeScenario(page, steps, profileData, activeSuite);
   }
 
   /**
@@ -153,10 +173,9 @@ export class CommandDispatcher {
 
     const profile = currentSuite.profiles?.[targetProfileName];
     if (!profile) {
-      console.warn(
+      throw new Error(
         `[IntentFlow Precondition] Profile '${targetProfileName}' referenced in precondition not found directly in active suite profiles.`
       );
-      return;
     }
 
     const nextCallStack = new Set(callStack);
@@ -170,7 +189,7 @@ export class CommandDispatcher {
           ...inheritedData,
         };
         const mergedUpstreamOverrides = {
-          ...((upstreamPre as any).overrides || {}),
+          ...(upstreamPre.overrides || {}),
           ...profileOverrides,
         };
         await this.executePreconditionProfileRecursive(
@@ -193,7 +212,7 @@ export class CommandDispatcher {
     await test.step(`Precondition [${effectiveRef}]`, async () => {
       const steps =
         profile.steps || resolveScenarioSteps(profile.refScenario!, sharedScenarios, suiteProfiles);
-      await this.executeScenario(page, steps, mergedPreconditionData);
+      await this.executeScenario(page, steps, mergedPreconditionData, currentSuite);
     });
 
     executedProfiles.add(targetProfileName);
@@ -205,18 +224,19 @@ export class CommandDispatcher {
   public async executeScenario(
     page: Page,
     steps: PipelineStep[],
-    dataRecord: Record<string, any> = {}
+    dataRecord: Record<string, any> = {},
+    activeSuite: SuiteSpec | undefined = this.suite
   ): Promise<void> {
     for (let i = 0; i < steps.length; i++) {
       const step: any = steps[i];
 
       if (step.refScenario && !step.intent) {
-        await this.handleRefScenarioStep(page, step, dataRecord);
+        await this.handleRefScenarioStep(page, step, dataRecord, activeSuite);
         continue;
       }
 
       const processedStep = this.interpolateStep(step, dataRecord);
-      await this.executeStep(page, processedStep, i, dataRecord);
+      await this.executeStep(page, processedStep, i, dataRecord, activeSuite);
     }
   }
 
@@ -226,9 +246,10 @@ export class CommandDispatcher {
   private async handleRefScenarioStep(
     page: Page,
     step: any,
-    currentDataRecord: Record<string, any>
+    currentDataRecord: Record<string, any>,
+    activeSuite: SuiteSpec | undefined
   ): Promise<void> {
-    if (!this.suite) {
+    if (!activeSuite) {
       throw new Error(`[IntentFlow] Cannot resolve 'refScenario' without a SuiteSpec bound to CommandDispatcher.`);
     }
 
@@ -248,12 +269,12 @@ export class CommandDispatcher {
       ...resolvedInlineData,
     };
 
-    const sharedScenarios = this.suite.sharedScenarios || {};
-    const suiteProfiles = this.suite.profiles || {};
+    const sharedScenarios = activeSuite.sharedScenarios || {};
+    const suiteProfiles = activeSuite.profiles || {};
     const stepsToRun = resolveScenarioSteps(targetScenarioName, sharedScenarios, suiteProfiles);
 
     await test.step(`Include Scenario [${targetScenarioName}]`, async () => {
-      await this.executeScenario(page, stepsToRun, mergedDataRecord);
+      await this.executeScenario(page, stepsToRun, mergedDataRecord, activeSuite);
     });
   }
 
@@ -348,7 +369,8 @@ export class CommandDispatcher {
     page: Page,
     step: any,
     stepIndex: number,
-    dataRecord: Record<string, any> = {}
+    dataRecord: Record<string, any> = {},
+    activeSuite: SuiteSpec | undefined = this.suite
   ): Promise<void> {
     if (this.pagesMap.get('main') !== page) {
       this.pagesMap.clear();
@@ -381,7 +403,7 @@ export class CommandDispatcher {
 
           if (step.intent === 'action') {
             if (params.subIntent === 'navigate' || params.subIntent === 'setValue') {
-              const url = typeof params.value === 'string' ? params.value : (this.suite?.page || '/');
+              const url = typeof params.value === 'string' ? params.value : (activeSuite?.page || '/');
               await activeTargetPage.goto(url, { waitUntil: 'domcontentloaded' });
               return;
             }
@@ -502,6 +524,12 @@ export class CommandDispatcher {
     switch (uiEntry.widgetType) {
       case 'TEXTBOX':
         return new TextBoxControl(page, uiEntry, params);
+
+      case 'RICH_TEXT':
+        return new RichTextControl(page, uiEntry, params);
+
+      case 'FILE_UPLOAD':
+        return new FileUploadControl(page, uiEntry, params);
 
       case 'BUTTON':
       case 'LINK':

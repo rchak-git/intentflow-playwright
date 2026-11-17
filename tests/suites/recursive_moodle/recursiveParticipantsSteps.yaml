@@ -1,0 +1,50 @@
+page: "/user/index.php"
+description: "Exercise recursive Moodle login and participants setup without changing pilot suites"
+uiMap:
+  - "pilotMoodleLoginUiMap"
+  - "pilotMoodleHomeUiMap"
+  - "MoodleCourseUiMap"
+  - "moodleParticipantsUiMap"
+includes:
+  - '..\pilot_moodle\pilotMoodleLoginSteps.yaml'
+
+profiles:
+  setup_recursiveAdminParticipantsPage:
+    description: "Log in as admin and navigate to course participants"
+    preconditions:
+      - refProfile: "td_pilotSuccessfulAdminLogin"
+    steps:
+      - step: "Open My first course from the Home page"
+        fieldKey: "pilot_moodle_home_firstCourseLink"
+        intent: "action"
+        params:
+          subIntent: "click"
+      - step: "Open the Participants tab"
+        fieldKey: "moodle_course_participantsTab"
+        intent: "action"
+        params:
+          subIntent: "click"
+
+  td_recursiveAdminVerifyParticipants:
+    description: "Verify participants after recursive login and course navigation"
+    preconditions:
+      - refProfile: "setup_recursiveAdminParticipantsPage"
+    steps:
+      - step: "Verify the Participants table is visible"
+        fieldKey: "moodle_participant_participantsTable"
+        intent: "verify"
+        params:
+          subIntent: "state"
+          value: "visible"
+      - step: "Verify the Participants table contains Sam Student"
+        fieldKey: "moodle_participant_participantsTable"
+        intent: "verify"
+        params:
+          subIntent: "contains"
+          value: "Sam Student"
+      - step: "Verify the Participants table contains Terri Teacher"
+        fieldKey: "moodle_participant_participantsTable"
+        intent: "verify"
+        params:
+          subIntent: "contains"
+          value: "Terri Teacher"

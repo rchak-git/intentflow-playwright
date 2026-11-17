@@ -39,6 +39,10 @@ For missing capabilities, report `UNSUPPORTED_OPERATIONS` with scenario, step, r
 
 ## Produce Path 2 YAML
 
+- Prefer a reusable, page- or component-oriented suite over separate student, admin, or other role-specific files. Search existing suites and includes first, including role-named files, and reuse a suitable suite without renaming it. Use a stable page heading, title, route, or established product name as a guide; disambiguate generic, dynamic, localized, or repeated headings with the page or workflow context.
+- Place verified role-specific scenarios or expected results in clearly named profiles in the same page suite where practical. Reuse shared scenarios and prerequisite profiles when behavior is genuinely the same; create separate files only when pages, workflows, or maintenance boundaries materially differ. Do not assume a scenario, locator, or permission verified for one role works for another.
+- Keep credentials out of YAML and verify how the spec supplies each role's login data to the selected profile and its preconditions. A profile name alone does not select credentials. Do not invent role profiles or claim them runnable without verified setup, permissions, and behavior.
+- These naming rules apply to new files and additions. Preserve existing filenames, profiles, and references unless an explicit migration is requested; if migrating, update dependent includes, specs, and references and verify each affected profile.
 - Use `tests/suites/<suite-subpath>/<pageName>Steps.yaml`, preserving the existing file when updating. Set `page` when known, a concise `description`, actual registry key(s) in `uiMap`, and applicable relative `includes`. Use `sharedScenarios` and `profiles`; do not create a root `tests` section.
 - Give each executable scenario a unique `td_*` profile. Use concise human-readable `step` descriptions. Standard executable steps use `fieldKey`, `intent`, and appropriate `params`; reference steps use the schema's `refScenario` or `refProfile` form instead.
 - Declare only the immediate upstream parent profile in `preconditions` (e.g., `mheAssignmentsDirectorySteps.td_clickCreateAssignment`) rather than stacking every ancestor profile or duplicating intermediate screen navigation steps inside the target profile; the dispatcher resolves upstream precondition chains recursively with deduplication. When a scenario requires different setup data or a different upstream role/login profile (e.g., student vs. admin), specify `data:` or `overrides:` on the precondition. Do not assume an include's filename qualifies a profile at runtime without checking merged names.
@@ -59,6 +63,7 @@ For missing capabilities, report `UNSUPPORTED_OPERATIONS` with scenario, step, r
 
    ```sh
    npx tsx -e "import { loadYamlSuite } from './src/engine/yamlLoader'; loadYamlSuite(process.argv[1]); console.log('Suite loaded successfully');" <suite-path>
+   ```
 
    This checks loading and schema validation, not all references or runtime semantics. Also run the preflight command above for each changed profile and check the remaining preflight items against the merged suite, registry, dispatcher, and controls; report any check that could not be completed.
 2. Run npx tsc --noEmit when TypeScript files change. Run the exact positive spec methods described above and capture their results. Do not replace browser execution with test discovery or type-checking.

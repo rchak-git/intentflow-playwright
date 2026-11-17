@@ -198,6 +198,10 @@ export function resolveScenarioSteps(
  * Loads and validates a consolidated Single-File or Included Suite YAML file against intentSchema rules.
  */
 export function loadYamlSuite(filePath: string): SuiteSpec {
+  return loadYamlSuiteWithStack(filePath, new Set<string>());
+}
+
+function loadYamlSuiteWithStack(filePath: string, stack: Set<string>): SuiteSpec {
   let absolutePath = path.isAbsolute(filePath)
     ? filePath
     : path.resolve(process.cwd(), filePath);
@@ -213,6 +217,13 @@ export function loadYamlSuite(filePath: string): SuiteSpec {
     throw new Error(`[IntentFlow] YAML suite file not found at path: ${absolutePath}`);
   }
 
+  absolutePath = fs.realpathSync(absolutePath);
+  if (stack.has(absolutePath)) {
+    throw new Error(`[IntentFlow] Circular suite includes: ${[...stack, absolutePath].join(' -> ')}`);
+  }
+  const nextStack = new Set(stack);
+  nextStack.add(absolutePath);
+
   const raw = fs.readFileSync(absolutePath, 'utf-8');
   const parsedYaml: any = parse(raw) || {};
 
@@ -227,7 +238,7 @@ export function loadYamlSuite(filePath: string): SuiteSpec {
       const incFileName = inc.endsWith('.yaml') || inc.endsWith('.yml') ? inc : `${inc}.yaml`;
       const incPath = path.resolve(suiteDir, incFileName);
 
-      const childSuite = loadYamlSuite(incPath);
+      const childSuite = loadYamlSuiteWithStack(incPath, nextStack);
 
       mergedProfiles = { ...mergedProfiles, ...(childSuite.profiles || {}) };
       mergedScenarios = { ...mergedScenarios, ...(childSuite.sharedScenarios || {}) };

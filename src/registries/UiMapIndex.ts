@@ -6,9 +6,10 @@ import { MoodleLoginPageUiMap } from './Moodle/moodleLogin.map';
 import { MoodleHomePageUiMap } from './Moodle/MoodleHomePage.map';
 import { MoodleCourseUiMap } from './Moodle/MoodleCourse.map';
 import { MoodleParticipantUiMap } from './Moodle/MoodleParticipants.map';
-import { PilotMoodleLoginUiMap } from './pilot_moodle/pilotMoodleLogin.map';
-import { PilotMoodleHomeUiMap } from './pilot_moodle/pilotMoodleHome.map';
-import { AppLevelControlsUiMap } from './pilot_moodle/appLevelControlsUI.map';
+import { MoodleEditProfileUiMap } from './Moodle/moodleEditProfile.map';
+import { StudentMyCoursesUiMap } from './pilot_moodle/studentMyCourses.map';
+import { StudentPrivateFilesUiMap } from './pilot_moodle/studentPrivateFiles.map';
+
 import { AgGridTableUiMap } from './temp/AgGridUiMap';
 import { CustomSelectUiMap } from './temp/customSelect.map';
 
@@ -18,13 +19,13 @@ import { MheHomePageUiMap } from './Mhe/mhe_HomePage.map';
 
 // --- Temp / Experiment Domain Imports ---
 import { AngularTableUiMap } from './temp/AngularTableUiMap';
-import { ReactSelectUiMap }  from './temp/reactSelectUiMap';
-import {RadioGroupUiMap} from './temp/radioGroupUiMap';
-import {AngularRadioGroupUiMap} from './temp/AngularRadioGroupUiMap';
-import {AngularMaterialCardUiMap} from './temp/AngularMaterialCardUiMap';
-import {MuiAutocompleteUiMap} from './temp/MuiAutocompleteUiMap';
+import { ReactSelectUiMap } from './temp/reactSelectUiMap';
+import { RadioGroupUiMap } from './temp/radioGroupUiMap';
+import { AngularRadioGroupUiMap } from './temp/AngularRadioGroupUiMap';
+import { AngularMaterialCardUiMap } from './temp/AngularMaterialCardUiMap';
+import { MuiAutocompleteUiMap } from './temp/MuiAutocompleteUiMap';
 import { MultipleWindowsUiMap } from './temp/multipleWindows.map';
-import {MheCourseDashboardUiMap} from './Mhe/MheCourseDashboard.map';
+import { MheCourseDashboardUiMap } from './Mhe/MheCourseDashboard.map';
 
 
 // Consolidated Moodle Domain Map
@@ -33,9 +34,10 @@ export const MOODLE_UI_MAP: Record<string, UiMapEntry> = {
   ...MoodleHomePageUiMap,
   ...MoodleCourseUiMap,
   ...MoodleParticipantUiMap,
-  ...PilotMoodleLoginUiMap,
-  ...PilotMoodleHomeUiMap,
-  ...AppLevelControlsUiMap,
+  ...MoodleEditProfileUiMap,
+  ...StudentMyCoursesUiMap,
+  ...StudentPrivateFilesUiMap,
+
 };
 
 // Consolidated McGraw Hill Domain Map
@@ -55,7 +57,7 @@ export const TEMP_UI_MAP: Record<string, UiMapEntry> = {
   ...AngularRadioGroupUiMap,
   ...AngularMaterialCardUiMap,
   ...MuiAutocompleteUiMap,
- ...MultipleWindowsUiMap,
+  ...MultipleWindowsUiMap,
 };
 
 // Unified Global Map
@@ -77,32 +79,31 @@ export const UI_MAP_REGISTRY: Record<string, Record<string, UiMapEntry>> = {
   MoodleHomePageUiMap: MoodleHomePageUiMap as Record<string, UiMapEntry>,
   MoodleCourseUiMap: MoodleCourseUiMap as Record<string, UiMapEntry>,
   moodleParticipantsUiMap: MoodleParticipantUiMap as Record<string, UiMapEntry>,
-  PilotMoodleLoginUiMap,
-  pilotMoodleLoginUiMap: PilotMoodleLoginUiMap as Record<string, UiMapEntry>,
-  PilotMoodleHomeUiMap,
-  pilotMoodleHomeUiMap: PilotMoodleHomeUiMap as Record<string, UiMapEntry>,
-  AppLevelControlsUiMap,
-  appLevelControlsUiMap: AppLevelControlsUiMap as Record<string, UiMapEntry>,
-
+  MoodleEditProfileUiMap,
+  moodleEditProfileUiMap: MoodleEditProfileUiMap as Record<string, UiMapEntry>,
+  StudentMyCoursesUiMap,
+  studentMyCoursesUiMap: StudentMyCoursesUiMap as Record<string, UiMapEntry>,
+  StudentPrivateFilesUiMap,
+  studentPrivateFilesUiMap: StudentPrivateFilesUiMap as Record<string, UiMapEntry>,
   // Direct Page Maps - MHE
   MheLoginUiMap: MheLoginUiMap as Record<string, UiMapEntry>,
   mheLoginUiMap: MheLoginUiMap as Record<string, UiMapEntry>, // Alias safeguard
   MheHomePageUiMap: MheHomePageUiMap as Record<string, UiMapEntry>,
-  MheCourseDashboardUiMap: MheCourseDashboardUiMap as Record<string,UiMapEntry>,
+  MheCourseDashboardUiMap: MheCourseDashboardUiMap as Record<string, UiMapEntry>,
 
   // Direct Page Maps - Temp Experiments
-  
+
   AngularTableUiMap: AngularTableUiMap as Record<string, UiMapEntry>,
   angularTableUiMap: AngularTableUiMap as Record<string, UiMapEntry>,
   AgGridTableUiMap: AgGridTableUiMap as Record<string, UiMapEntry>,
   agGridTableUiMap: AgGridTableUiMap as Record<string, UiMapEntry>,
   CustomSelectUiMap,
   customSelectUiMap: CustomSelectUiMap as Record<string, UiMapEntry>,
-  ReactSelectUiMap: ReactSelectUiMap as Record<string,UiMapEntry>,
-  RadioGroupUiMap: RadioGroupUiMap as Record<string,UiMapEntry>,
-  AngularRadioGroupUiMap: AngularRadioGroupUiMap as Record<string,UiMapEntry>,
-  AngularMaterialCardUiMap: AngularMaterialCardUiMap as Record<string,UiMapEntry>,
-  MuiAutocompleteUiMap: MuiAutocompleteUiMap as Record<string,UiMapEntry>,
+  ReactSelectUiMap: ReactSelectUiMap as Record<string, UiMapEntry>,
+  RadioGroupUiMap: RadioGroupUiMap as Record<string, UiMapEntry>,
+  AngularRadioGroupUiMap: AngularRadioGroupUiMap as Record<string, UiMapEntry>,
+  AngularMaterialCardUiMap: AngularMaterialCardUiMap as Record<string, UiMapEntry>,
+  MuiAutocompleteUiMap: MuiAutocompleteUiMap as Record<string, UiMapEntry>,
   MultipleWindowsUiMap,
   multipleWindowsUiMap: MultipleWindowsUiMap as Record<string, UiMapEntry>,
 

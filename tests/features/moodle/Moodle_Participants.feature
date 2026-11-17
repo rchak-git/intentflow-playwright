@@ -1,10 +1,7 @@
 Feature: Moodle Course Participant Table Verification
 
 
-                  Background:
-    Given the user is logged into Moodle as admin
-    And the user navigates to the Course Participants page for "My first course"
-
+                  
   Scenario: Authenticated user verifies course participants list
     Given the user performs successful login with valid student credentials
     When the user clicks on the "My courses" navigation link

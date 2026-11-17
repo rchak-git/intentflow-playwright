@@ -138,6 +138,8 @@ export const StandardStepSchema = z.object({
   widgetType: z.enum([
     "WEB_TABLE",
     "TEXTBOX",
+    "RICH_TEXT",
+    "FILE_UPLOAD",
     "BUTTON",
     "DROPDOWN",
     "CHECKBOX",

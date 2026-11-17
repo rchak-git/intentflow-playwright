@@ -1,0 +1,45 @@
+page: "/user/index.php"
+description: "Student verifies course participants"
+uiMap:
+  - "MoodleLoginPageUiMap"
+  - "MoodleHomePageUiMap"
+  - "MoodleCourseUiMap"
+  - "moodleParticipantsUiMap"
+  - "studentMyCoursesUiMap"
+includes:
+  - "studentMyCoursesSteps.yaml"
+
+profiles:
+  td_studentVerifyCourseParticipants:
+    description: "Open My first course and verify its participants"
+    preconditions:
+      - refProfile: "td_studentNavigateToMyCourses"
+    steps:
+      - step: "Open My first course"
+        fieldKey: "moodle_studentMyCourses_firstCourseLink"
+        intent: "action"
+        params:
+          subIntent: "click"
+      - step: "Open the Participants tab"
+        fieldKey: "moodle_course_participantsTab"
+        intent: "action"
+        params:
+          subIntent: "click"
+      - step: "Verify the Participants table is visible"
+        fieldKey: "moodle_participant_participantsTable"
+        intent: "verify"
+        params:
+          subIntent: "state"
+          value: "visible"
+      - step: "Verify the table contains Sam Student"
+        fieldKey: "moodle_participant_participantsTable"
+        intent: "verify"
+        params:
+          subIntent: "contains"
+          value: "Sam Student"
+      - step: "Verify the table contains Terri Teacher"
+        fieldKey: "moodle_participant_participantsTable"
+        intent: "verify"
+        params:
+          subIntent: "contains"
+          value: "Terri Teacher"

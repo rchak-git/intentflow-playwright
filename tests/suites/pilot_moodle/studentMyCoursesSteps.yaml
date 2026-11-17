@@ -1,0 +1,25 @@
+page: "/my/courses.php"
+description: "Navigate from student login to My courses"
+uiMap:
+  - "MoodleLoginPageUiMap"
+  - "MoodleHomePageUiMap"
+includes:
+  - "studentLoginSteps.yaml"
+
+profiles:
+  td_studentNavigateToMyCourses:
+    description: "Open My courses after student login"
+    preconditions:
+      - refProfile: "td_studentLogin"
+    steps:
+      - step: "Click My courses"
+        fieldKey: "moodle_hmpage_myCoursesNavPillLink"
+        intent: "action"
+        params:
+          subIntent: "click"
+      - step: "Verify the My courses page URL"
+        fieldKey: "page"
+        intent: "verify"
+        params:
+          subIntent: "urlContains"
+          value: "/my/courses[.]php"

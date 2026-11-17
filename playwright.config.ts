@@ -1,4 +1,8 @@
 import { defineConfig, devices } from '@playwright/test';
+import { loadLocalEnv, resolveRuntimeConfig } from './src/config/runtimeConfig';
+
+loadLocalEnv();
+const runtime = resolveRuntimeConfig();
 
 export default defineConfig({
   testDir: './tests',
@@ -22,7 +26,7 @@ export default defineConfig({
   },
 
   use: {
-    baseURL: 'https://sandbox.moodledemo.net',
+    baseURL: runtime.baseURL,
     headless: false,                                   //'https://mhufrostlor-qa.learningmate.com' ,                              // 'https://sandbox.moodledemo.net',
     trace: 'on',         //'retain-on-failure',
 
@@ -35,7 +39,7 @@ export default defineConfig({
   projects: [
     {
       name: 'chromium',
-      use: { ...devices['Desktop Chrome'] },
+      use: { ...devices['Desktop Chrome'], ...(runtime.channel ? { channel: runtime.channel } : {}) },
     },
   ],
 });

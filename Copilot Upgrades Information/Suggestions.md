@@ -6,8 +6,14 @@ mitigations and their usage in [Solutions.md](./Solutions.md).
 
 ## Suggested priority
 
-1. Strict validation.-> Status : A precise label would be: “Standalone preflight implemented; automatic enforcement pending.”
-2. Easier test-data setup.
+**High-priority TODO:** Add a shared runner for simple YAML-based test methods
+as described in [section 8](#8-simple-yaml-test-runner).
+
+**Next exercise:** Student assignment submission; see
+[section 9](#9-representative-lms-pilot-exercises).
+
+1. Strict validation: Status : Done
+2. Easier test-data setup: Status: Done
 3. Stronger identity and assertion checks.
 4. UI Map ownership and reuse.
 
@@ -24,14 +30,15 @@ mitigations and their usage in [Solutions.md](./Solutions.md).
 
 ## 2. Hidden execution behavior
 
-- **Pain point:** Missing precondition profiles can be skipped, unknown map
-  names can fall back to the global map, and preconditions execute shallowly.
-  Some unsupported operations can fall back to a different behavior.
+- **Pain point:** Missing precondition profiles and unknown map names previously
+  fell back or were skipped. Some unsupported operations can fall back to a
+  different behavior.
 - **Suggested mitigation:** Add strict preflight validation that reports
   problems before browser execution.
-- **Status:** A standalone static preflight validator is implemented; see
-  [Solutions.md](./Solutions.md#1-static-preflight-validator). Automatic
-  enforcement before every test and complete validation remain future work.
+- **Status:** Selected-profile preflight now runs automatically before
+  dispatcher browser steps; missing maps and preconditions also fail explicitly.
+  Complete validation and pre-browser-launch enforcement remain future work;
+  see [Solutions.md](./Solutions.md#1-static-preflight-validator).
 
 ## 3. Test data and setup
 
@@ -39,8 +46,9 @@ mitigations and their usage in [Solutions.md](./Solutions.md).
   demo can reset, and account enrollment or language can affect test results.
 - **Suggested mitigation:** Provide a simple local setup command and check the
   required accounts, courses, and language before tests run.
-- **Status:** Proposed. Keep credentials out of YAML, source files, command
-  logs, and reports.
+- **Status:** Local `.env` configuration and guarded pilot login IDs are
+  implemented; see [Solutions.md](./Solutions.md#2-local-test-data-and-environment-setup).
+  Account availability, course enrollment, and language checks remain manual.
 
 ## 4. Assertion confidence
 
@@ -79,6 +87,76 @@ mitigations and their usage in [Solutions.md](./Solutions.md).
     cached input and output tokens where reported.
 - **Status:** Workflow guidance; actual savings require measurement. Initial
   framework and agent setup may cost more than subsequent reuse.
+
+## 7. Additional LMS control capabilities
+
+The framework already has textboxes, buttons, checkboxes, radio groups, native
+and custom selects, search, tables, cards, containers, and single-file upload.
+Prioritize the following additions one at a time:
+
+1. **Rich-text editing:** Plain-text entry, clearing, and verification are
+   implemented; formatting and toolbar operations remain proposed.
+2. **File download:** Download and verify a course resource.
+3. **Multi-select:** Select multiple learners, groups, or tags.
+4. **Date/time picker:** Set and verify an assignment due date.
+5. **Drag and drop:** Reorder activities or answer matching questions.
+6. **Dialogs and browser alerts:** Confirm actions or handle browser prompts.
+7. **Media player:** Verify audio or video playback state.
+8. **Tree navigation:** Expand course or folder hierarchies.
+
+- **Status:** Other capabilities are proposed. Rich-text editing is tested
+  locally; a Moodle iframe was checked read-only, not edited or saved.
+- **Approach:** Prefer browser-visible HTML and accessibility semantics over
+  PHP-, Angular-, or React-specific behavior. Reuse existing controls or add
+  operations where appropriate rather than introducing a new type for every
+  interaction. Validate each capability with focused controlled tests and a
+  real Moodle example when available; also check Angular or React examples
+  where available.
+
+## 8. Simple YAML test runner
+
+- **Priority:** High. **Status:** Proposed; not yet implemented.
+- **Goal:** Keep Playwright test methods simple so manual testers can focus on
+  YAML scenarios rather than credential wiring or framework code.
+- **Proposed authoring pattern:**
+
+  ```ts
+  test('Student enters and clears the profile description', async ({ page }) => {
+    await runIntentFlow(page, {
+      suite: 'moodleEditProfileSteps.yaml',
+      profile: 'td_studentEnterAndClearDescription',
+    });
+  });
+  ```
+
+- **Framework work:** Define unambiguous suite path resolution; load and
+  preflight the selected profile; resolve the appropriate locally configured
+  credentials securely and pass them through prerequisite profiles; and
+  preserve explicitly configured scenario-specific safety checks. Missing
+  configuration or unsupported checks must fail clearly, without logging
+  credentials. The example is a proposed API, not executable today.
+- **Scope:** First implement the shared runner and verify existing behavior.
+  Automatic discovery of YAML profiles is a separate potential improvement.
+
+## 9. Representative LMS pilot exercises
+
+Use real workflows to identify missing controls and framework capabilities,
+rather than implementing controls solely from a proposed list. Complete one
+exercise at a time:
+
+1. **Student assignment submission** — next exercise, planned for tomorrow.
+   Identify a suitable Moodle assignment and verify the student's access,
+   submission requirements, expected result, and safe test-data cleanup before
+   submitting. Reuse existing login, maps, profiles, and controls where suitable.
+2. **Student quiz** — exercise a representative quiz workflow and report gaps.
+3. **Educator grading** — exercise reviewing and grading a test submission,
+   including the appropriate account and permissions.
+
+For each exercise, start with a scenario and inspect the live application.
+Record missing or unsupported capabilities as an SDET handoff, implement only
+what the scenario needs, and verify the result and any cleanup. Use only
+dedicated test data; do not overwrite or delete existing user work. Moodle's
+shared sandbox may reset, so availability must be checked at exercise time.
 
 ## Pilot execution note
 

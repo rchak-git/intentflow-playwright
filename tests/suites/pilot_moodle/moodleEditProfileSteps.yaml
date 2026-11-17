@@ -1,0 +1,63 @@
+page: "/user/edit.php"
+description: "Moodle Edit profile workflows"
+uiMap:
+  - "MoodleLoginPageUiMap"
+  - "MoodleHomePageUiMap"
+  - "MoodleEditProfileUiMap"
+includes:
+  - "studentLoginSteps.yaml"
+
+profiles:
+  td_studentEnterAndClearDescription:
+    description: "Enter and clear the profile description without saving"
+    preconditions:
+      - refProfile: "td_studentLogin"
+    data:
+      descriptionText: "IntentFlow editor test"
+    steps:
+      - step: "Open Edit profile"
+        fieldKey: "page"
+        intent: "action"
+        params:
+          subIntent: "navigate"
+          value: "/user/edit.php"
+      - step: "Verify the Description editor is visible"
+        fieldKey: "moodle_editProfile_descriptionRichText"
+        intent: "verify"
+        params:
+          subIntent: "state"
+          value: "visible"
+      - step: "Replace the Description"
+        fieldKey: "moodle_editProfile_descriptionRichText"
+        intent: "populate"
+        params:
+          value: "${data:descriptionText}"
+      - step: "Verify the Description"
+        fieldKey: "moodle_editProfile_descriptionRichText"
+        intent: "verify"
+        params:
+          subIntent: "equals"
+          value: "${data:descriptionText}"
+      - step: "Clear the Description"
+        fieldKey: "moodle_editProfile_descriptionRichText"
+        intent: "action"
+        params:
+          subIntent: "clear"
+      - step: "Verify the Description is empty"
+        fieldKey: "moodle_editProfile_descriptionRichText"
+        intent: "verify"
+        params:
+          subIntent: "equals"
+          value: ""
+      - step: "Leave Edit profile without saving"
+        fieldKey: "page"
+        intent: "action"
+        params:
+          subIntent: "navigate"
+          value: "/my/"
+      - step: "Verify the Dashboard is open"
+        fieldKey: "page"
+        intent: "verify"
+        params:
+          subIntent: "urlContains"
+          value: "/my/"

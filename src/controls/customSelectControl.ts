@@ -164,7 +164,11 @@ export class CustomSelectControl extends BaseControl {
           // Checks Angular MDC value, react-select single-value container, or falls back to host
           const valueContainer = this.locator.first().locator('.mat-mdc-select-value, .react-select__single-value, .mat-select-value').first();
           const target = (await valueContainer.count()) > 0 ? valueContainer : this.locator.first();
-          await expect(target).toContainText(expectedStr, { timeout: targetParams?.timeout });
+          if (subIntent === 'equals') {
+            await expect(target).toHaveText(expectedStr, { timeout: targetParams?.timeout });
+          } else {
+            await expect(target).toContainText(expectedStr, { timeout: targetParams?.timeout });
+          }
           break;
         }
 

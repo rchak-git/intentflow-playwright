@@ -1,0 +1,37 @@
+page: "/login/index.php"
+description: "Verified student login for the Moodle participants flow"
+uiMap:
+  - "MoodleLoginPageUiMap"
+  - "MoodleHomePageUiMap"
+
+profiles:
+  td_studentLogin:
+    description: "Log in with the locally configured student account"
+    steps:
+      - step: "Open the login page"
+        fieldKey: "page"
+        intent: "action"
+        params:
+          subIntent: "navigate"
+          value: "/login/index.php"
+      - step: "Enter the username"
+        fieldKey: "moodle_login_usernameTextbox"
+        intent: "populate"
+        params:
+          value: "${data:username}"
+      - step: "Enter the password"
+        fieldKey: "moodle_login_passwordTextbox"
+        intent: "populate"
+        params:
+          value: "${data:password}"
+      - step: "Log in"
+        fieldKey: "moodle_login_loginButton"
+        intent: "action"
+        params:
+          subIntent: "click"
+      - step: "Verify the authenticated user menu is visible"
+        fieldKey: "moodle_hmpage_userMenuButton"
+        intent: "verify"
+        params:
+          subIntent: "state"
+          value: "visible"

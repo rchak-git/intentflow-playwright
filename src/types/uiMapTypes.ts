@@ -2,6 +2,8 @@
 
 export const WIDGET_TYPES = [
   'TEXTBOX',
+  'RICH_TEXT',
+  'FILE_UPLOAD',
   'BUTTON',
   'CHECKBOX',
   'RADIO_GROUP',

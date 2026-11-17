@@ -1,0 +1,87 @@
+page: "/user/files.php"
+description: "Upload and verify a student private file"
+uiMap:
+  - "MoodleLoginPageUiMap"
+  - "MoodleHomePageUiMap"
+  - "StudentPrivateFilesUiMap"
+includes:
+  - "studentLoginSteps.yaml"
+
+profiles:
+  td_studentUploadPrivateFile:
+    description: "Upload a fixture and verify it persists in Private files"
+    preconditions:
+      - refProfile: "td_studentLogin"
+    data:
+      fixturePath: "tests/fixtures/TempFile.txt"
+      expectedFileName: "TempFile.txt"
+    steps:
+      - step: "Open the user menu"
+        fieldKey: "moodle_hmpage_userMenuButton"
+        intent: "action"
+        params:
+          subIntent: "click"
+      - step: "Open Private files"
+        fieldKey: "moodle_studentPrivateFiles_menuLink"
+        intent: "action"
+        params:
+          subIntent: "click"
+      - step: "Wait for the file manager to load"
+        fieldKey: "moodle_studentPrivateFiles_managerLabel"
+        intent: "verify"
+        params:
+          subIntent: "state"
+          value: "visible"
+      - step: "Ensure the test filename does not already exist"
+        fieldKey: "moodle_studentPrivateFiles_fileCard"
+        intent: "verify"
+        params:
+          subIntent: "count"
+          anchorText: "${data:expectedFileName}"
+          value: 0
+      - step: "Open the file picker"
+        fieldKey: "moodle_studentPrivateFiles_addButton"
+        intent: "action"
+        params:
+          subIntent: "click"
+      - step: "Choose the test fixture"
+        fieldKey: "moodle_studentPrivateFiles_attachmentFileUpload"
+        intent: "populate"
+        params:
+          value: "${data:fixturePath}"
+      - step: "Upload the file"
+        fieldKey: "moodle_studentPrivateFiles_uploadButton"
+        intent: "action"
+        params:
+          subIntent: "click"
+      - step: "Save changes"
+        fieldKey: "moodle_studentPrivateFiles_saveButton"
+        intent: "action"
+        params:
+          subIntent: "click"
+      - step: "Reopen Private files"
+        fieldKey: "page"
+        intent: "action"
+        params:
+          subIntent: "navigate"
+          value: "/user/files.php"
+      - step: "Wait for the saved file manager to load"
+        fieldKey: "moodle_studentPrivateFiles_managerLabel"
+        intent: "verify"
+        params:
+          subIntent: "state"
+          value: "visible"
+      - step: "Verify the fixture is displayed"
+        fieldKey: "moodle_studentPrivateFiles_fileCard"
+        intent: "verify"
+        params:
+          subIntent: "state"
+          anchorText: "${data:expectedFileName}"
+          value: "visible"
+      - step: "Verify the exact saved filename"
+        fieldKey: "moodle_studentPrivateFiles_fileCard"
+        intent: "verify"
+        params:
+          subIntent: "equals"
+          anchorText: "${data:expectedFileName}"
+          value: "${data:expectedFileName}"

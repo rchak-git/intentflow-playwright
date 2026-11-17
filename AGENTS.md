@@ -24,6 +24,10 @@ The source types and registry are authoritative. In particular:
 
 ## File Naming, Placement, and Registry Synchronization
 
+- Prefer one reusable map per application page or component, rather than separate maps for student, admin, or other roles. Search all relevant registered maps and existing AUT directories first; reuse verified entries regardless of their filename.
+- Choose a stable, page-oriented name using the page heading, title, route, or established product terminology. Do not rely on a heading or title alone when it is generic, dynamic, localized, or shared by different pages; add a distinguishing page or component qualifier. For example, use `moodlePrivateFiles.map.ts` rather than `studentPrivateFiles.map.ts`.
+- Share entries across roles only when the target and locator are verified for those roles. Add role-qualified entries or separate maps only when materially different interfaces or locator scoping require them; do not assume one role's locator works for another.
+- Apply this convention to new artifacts and non-destructive additions. Do not rename or merge existing maps, exports, keys, or registry aliases without an explicit request; a migration must update dependent references and be verified.
 - Place UI Map files under `src/registries/<AUT_Directory>/<camelCasePageName>.map.ts`, preserving the directory's exact casing (for example, `Moodle`, `Mhe`, `Angular`, or `React`).
 - Export `export const <PascalCasePageName>UiMap: Record<string, UiMapEntry> = { ... }`.
 - Name keys `<pagePrefix>_<elementDescription><WidgetType>`, such as `moodle_participants_searchInput` or `mhe_login_submitButton`.
