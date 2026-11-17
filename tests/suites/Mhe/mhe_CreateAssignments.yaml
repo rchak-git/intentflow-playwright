@@ -1,0 +1,47 @@
+description: "Create and publish MHE assignments inside and outside the 7-day upcoming window"
+uiMap:
+  - "MheAssignmentsDirectoryUiMap"
+  - "MheSelectAssignmentTypeUiMap"
+  - "MheCreateAssignmentFormUiMap" # Add this UI Map once we capture the form fields
+includes:
+  - "mhe_CourseDashboardSteps.yaml" # Replace with the exact filename of your Course Dashboard YAML
+
+sharedScenarios:
+  executeOpenCreateAssignmentType:
+    description: "Clicks + Create Assignment and selects an assignment type"
+    steps:
+      - step: "Verify the + Create Assignment button is visible"
+        fieldKey: "mhe_asg_createAssignmentBtn"
+        widgetType: "BUTTON"
+        intent: "verify"
+        params:
+          subIntent: "state"
+          value: "visible"
+      - step: "Click + Create Assignment button"
+        fieldKey: "mhe_asg_createAssignmentBtn"
+        widgetType: "BUTTON"
+        intent: "action"
+        params:
+          subIntent: "click"
+      - step: "Verify Select Assignment Type page title is visible"
+        fieldKey: "mhe_sat_pageTitle"
+        intent: "verify"
+        params:
+          subIntent: "state"
+          value: "visible"
+      - step: "Select Instructions assignment type"
+        fieldKey: "mhe_sat_instructionsBtn"
+        widgetType: "BUTTON"
+        intent: "action"
+        params:
+          subIntent: "click"
+
+profiles:
+  td_createUpcomingAndFutureAssignments:
+    description: "Creates one assignment due within 7 days (+3d) and one due beyond 7 days (+14d)"
+    preconditions:
+      - refProfile: "mhe_CourseDashboardSteps.td_navigateToAssignments"
+    steps:
+      - refScenario: "executeOpenCreateAssignmentType"
+      # Next: Populate Assignment 1 with "${generate:Upcoming_Asg_}" (storeAs: "upcomingAsgTitle") & due date "${date:+3d}"
+      # Next: Click + Create Assignment again & populate Assignment 2 with "${generate:Future_Asg_}" (storeAs: "futureAsgTitle") & due date "${date:+14d}"

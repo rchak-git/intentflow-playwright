@@ -21,30 +21,29 @@ export class TableControl extends BaseControl {
    * 2. Scrolls main grid container into view.
    * 3. Scrolls target row & waits for target cell to be attached/visible.
    */
- // src/controls/tableControl.ts
+  protected async ensureTableAndRowHydrated(targetLocator?: Locator, params?: StepParams): Promise<void> {
+    const targetParams = params || this.params;
+    const rowSelector = this.uiEntry.rowSelector || this.strategyConfig.rowSelector;
 
-protected async ensureTableAndRowHydrated(targetLocator?: Locator, params?: StepParams): Promise<void> {
-  const targetParams = params || this.params;
-  const rowSelector = this.uiEntry.rowSelector || this.strategyConfig.rowSelector;
+    // STEP 1: Progressively scroll main page until iframe attaches and becomes visible
+    await this.ensureFrameReady();
 
-  // STEP 1: Progressively scroll main page until iframe attaches and becomes visible
-  await this.ensureFrameReady();
+    // STEP 2: Scroll main grid container inside the iframe viewport
+    await this.locator.scrollIntoViewIfNeeded().catch(() => {});
 
-  // STEP 2: Scroll main grid container inside the iframe viewport
-  await this.locator.scrollIntoViewIfNeeded().catch(() => {});
+    // STEP 3: If anchorText is present, scroll the specific row
+    if (targetParams?.anchorText) {
+      const targetRow = this.locator.locator(rowSelector).filter({ hasText: targetParams.anchorText }).first();
+      await targetRow.waitFor({ state: 'attached', timeout: 15000 }).catch(() => {});
+      await targetRow.scrollIntoViewIfNeeded().catch(() => {});
+    }
 
-  // STEP 3: If anchorText is present, scroll the specific row
-  if (targetParams?.anchorText) {
-    const targetRow = this.locator.locator(rowSelector).filter({ hasText: targetParams.anchorText }).first();
-    await targetRow.waitFor({ state: 'attached', timeout: 15000 }).catch(() => {});
-    await targetRow.scrollIntoViewIfNeeded().catch(() => {});
+    // STEP 4: If target cell locator is passed, wait for visibility
+    if (targetLocator) {
+      await targetLocator.waitFor({ state: 'visible', timeout: 15000 }).catch(() => {});
+    }
   }
 
-  // STEP 4: If target cell locator is passed, wait for visibility
-  if (targetLocator) {
-    await targetLocator.waitFor({ state: 'visible', timeout: 15000 }).catch(() => {});
-  }
-}
   /**
    * Targets a specific row locator using anchorText filter.
    */
@@ -178,6 +177,7 @@ protected async ensureTableAndRowHydrated(targetLocator?: Locator, params?: Step
     await this.ensureTableAndRowHydrated(isRowScoped ? targetLocator : undefined, targetParams);
 
     const expectedStr = rawVal !== undefined ? String(rawVal) : '';
+    const assertionTimeout = targetParams?.timeout || 15000;
 
     switch (targetSubIntent) {
       case 'allRowCheckboxesState': {
@@ -204,14 +204,25 @@ protected async ensureTableAndRowHydrated(targetLocator?: Locator, params?: Step
         }
         break;
       }
+
       case 'cellText':
       case 'equals':
-        await expect(targetLocator).toHaveText(expectedStr, { timeout: 15000 });
+        await expect(targetLocator).toHaveText(expectedStr, { timeout: assertionTimeout });
+        break;
+
+      case 'notEquals':
+        await expect(this.locator).toBeVisible({ timeout: assertionTimeout });
+        await expect(targetLocator).not.toHaveText(expectedStr, { timeout: assertionTimeout });
+        break;
+
+      case 'notContains':
+        await expect(this.locator).toBeVisible({ timeout: assertionTimeout });
+        await expect(targetLocator).not.toContainText(expectedStr, { timeout: assertionTimeout });
         break;
 
       case 'contains':
       default:
-        await expect(targetLocator).toContainText(expectedStr, { timeout: 15000 });
+        await expect(targetLocator).toContainText(expectedStr, { timeout: assertionTimeout });
         break;
     }
   }

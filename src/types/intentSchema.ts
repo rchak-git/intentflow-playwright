@@ -9,6 +9,8 @@ export const IntentSchema = z.enum(INTENTS);
 export const WEB_TABLE_SUB_INTENTS = [
   'cellText',
   'contains',
+  'notContains',
+  'notEquals',
   'rowCount',
   'count',
   'clickSubControl',
@@ -32,7 +34,9 @@ export const SUB_INTENTS = [
   'hover',
   'dblClick',
   'equals',
+  'notEquals',
   'contains',
+  'notContains',
   'state',
   'urlContains',
   'jsClick',

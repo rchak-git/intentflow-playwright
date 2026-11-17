@@ -38,3 +38,71 @@ profiles:
         params:
           subIntent: "urlContains"
           value: "${data:expectedUrlSubstring || '/delivery-player'}"
+
+  td_successfulTeacherLogin:
+    description: "Log into MHE Delivery Player as Teacher"
+    steps:
+      - step: "Given the teacher opens the MHE Delivery Player login page"
+        fieldKey: "page"
+        intent: "action"
+        params:
+          subIntent: "navigate"
+          value: "/delivery-player/#/login"
+      - step: "When the teacher enters the username into the username field"
+        fieldKey: "mhe_login_usernameTextbox"
+        widgetType: "TEXTBOX"
+        intent: "populate"
+        params:
+          value: "${data:teacherUsername || data:username || 'admin_one'}"
+      - step: "And the teacher enters the password into the password field"
+        fieldKey: "mhe_login_passwordTextbox"
+        widgetType: "TEXTBOX"
+        intent: "populate"
+        params:
+          value: "${data:teacherPassword || data:password || 'P@ssw0rd'}"
+      - step: "And the teacher clicks the login button"
+        fieldKey: "mhe_login_loginButton"
+        widgetType: "BUTTON"
+        intent: "action"
+        params:
+          subIntent: "click"
+      - step: "Then the teacher should be redirected to the Home directory page"
+        fieldKey: "page"
+        intent: "verify"
+        params:
+          subIntent: "urlContains"
+          value: "${data:expectedUrlSubstring || '/delivery-player'}"
+
+  td_successfulStudentLogin:
+    description: "Log into MHE Delivery Player as Student"
+    steps:
+      - step: "Given the student opens the MHE Delivery Player login page"
+        fieldKey: "page"
+        intent: "action"
+        params:
+          subIntent: "navigate"
+          value: "/delivery-player/#/login"
+      - step: "When the student enters the username into the username field"
+        fieldKey: "mhe_login_usernameTextbox"
+        widgetType: "TEXTBOX"
+        intent: "populate"
+        params:
+          value: "${data:studentUsername || data:username || 'admin_one'}"
+      - step: "And the student enters the password into the password field"
+        fieldKey: "mhe_login_passwordTextbox"
+        widgetType: "TEXTBOX"
+        intent: "populate"
+        params:
+          value: "${data:studentPassword || data:password || 'P@ssw0rd'}"
+      - step: "And the student clicks the login button"
+        fieldKey: "mhe_login_loginButton"
+        widgetType: "BUTTON"
+        intent: "action"
+        params:
+          subIntent: "click"
+      - step: "Then the student should be redirected to the Home directory page"
+        fieldKey: "page"
+        intent: "verify"
+        params:
+          subIntent: "urlContains"
+          value: "${data:expectedUrlSubstring || '/delivery-player'}"

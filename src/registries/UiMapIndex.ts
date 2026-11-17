@@ -16,6 +16,7 @@ import { CustomSelectUiMap } from './temp/customSelect.map';
 // --- MHE Domain Imports ---
 import { MheLoginUiMap } from './Mhe/mheLogin.map';
 import { MheHomePageUiMap } from './Mhe/mhe_HomePage.map';
+import { MheCourseDashboardUiMap } from './Mhe/MheCourseDashboard.map';
 
 // --- Temp / Experiment Domain Imports ---
 import { AngularTableUiMap } from './temp/AngularTableUiMap';
@@ -25,8 +26,6 @@ import { AngularRadioGroupUiMap } from './temp/AngularRadioGroupUiMap';
 import { AngularMaterialCardUiMap } from './temp/AngularMaterialCardUiMap';
 import { MuiAutocompleteUiMap } from './temp/MuiAutocompleteUiMap';
 import { MultipleWindowsUiMap } from './temp/multipleWindows.map';
-import { MheCourseDashboardUiMap } from './Mhe/MheCourseDashboard.map';
-
 
 // Consolidated Moodle Domain Map
 export const MOODLE_UI_MAP: Record<string, UiMapEntry> = {
@@ -37,14 +36,13 @@ export const MOODLE_UI_MAP: Record<string, UiMapEntry> = {
   ...MoodleEditProfileUiMap,
   ...StudentMyCoursesUiMap,
   ...StudentPrivateFilesUiMap,
-
 };
 
 // Consolidated McGraw Hill Domain Map
 export const MHE_UI_MAP: Record<string, UiMapEntry> = {
   ...MheLoginUiMap,
   ...MheHomePageUiMap,
-  ...MheCourseDashboardUiMap
+  ...MheCourseDashboardUiMap,
 };
 
 // Consolidated Temp / Experiments Domain Map
@@ -64,7 +62,7 @@ export const TEMP_UI_MAP: Record<string, UiMapEntry> = {
 export const GLOBAL_UI_MAP: Record<string, UiMapEntry> = {
   ...MOODLE_UI_MAP,
   ...MHE_UI_MAP,
-  ...TEMP_UI_MAP
+  ...TEMP_UI_MAP,
 };
 
 // Registry Export (Clean 1-to-1 Mapping for Dynamic Lookup)
@@ -85,6 +83,7 @@ export const UI_MAP_REGISTRY: Record<string, Record<string, UiMapEntry>> = {
   studentMyCoursesUiMap: StudentMyCoursesUiMap as Record<string, UiMapEntry>,
   StudentPrivateFilesUiMap,
   studentPrivateFilesUiMap: StudentPrivateFilesUiMap as Record<string, UiMapEntry>,
+
   // Direct Page Maps - MHE
   MheLoginUiMap: MheLoginUiMap as Record<string, UiMapEntry>,
   mheLoginUiMap: MheLoginUiMap as Record<string, UiMapEntry>, // Alias safeguard
@@ -92,7 +91,6 @@ export const UI_MAP_REGISTRY: Record<string, Record<string, UiMapEntry>> = {
   MheCourseDashboardUiMap: MheCourseDashboardUiMap as Record<string, UiMapEntry>,
 
   // Direct Page Maps - Temp Experiments
-
   AngularTableUiMap: AngularTableUiMap as Record<string, UiMapEntry>,
   angularTableUiMap: AngularTableUiMap as Record<string, UiMapEntry>,
   AgGridTableUiMap: AgGridTableUiMap as Record<string, UiMapEntry>,
@@ -106,5 +104,4 @@ export const UI_MAP_REGISTRY: Record<string, Record<string, UiMapEntry>> = {
   MuiAutocompleteUiMap: MuiAutocompleteUiMap as Record<string, UiMapEntry>,
   MultipleWindowsUiMap,
   multipleWindowsUiMap: MultipleWindowsUiMap as Record<string, UiMapEntry>,
-
 };

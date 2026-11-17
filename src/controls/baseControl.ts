@@ -19,58 +19,38 @@ export abstract class BaseControl {
   }
 
   /**
-   * Auto-scrolls and waits for the parent iframe to be attached and visible if frameSelector is specified.
+   * Progressively scrolls the top-level page until the target iframe
+   * attaches and renders in the main document DOM.
    */
-// src/controls/baseControl.ts
+  protected async ensureFrameReady(): Promise<void> {
+    if (!this.uiEntry.frameSelector) return;
 
-/**
- * Progressively scrolls the top-level page until the target iframe 
- * attaches and renders in the main document DOM.
- */
-// src/controls/baseControl.ts
+    const frameElement = this.page.locator(this.uiEntry.frameSelector).first();
 
-/**
- * Progressively scrolls the top-level page until the target iframe 
- * attaches and renders in the main document DOM.
- */
-// src/controls/baseControl.ts
+    // Check if frame element exists in the DOM
+    let isAttached = (await frameElement.count()) > 0;
 
-/**
- * Progressively scrolls the top-level page until the target iframe 
- * attaches and renders in the main document DOM.
- */
-protected async ensureFrameReady(): Promise<void> {
-  if (!this.uiEntry.frameSelector) return;
+    // Progressive scroll loop to trigger viewport lazy-loading
+    let attempts = 0;
+    const maxAttempts = 12; // Max ~4800px scroll depth
 
-  const frameElement = this.page.locator(this.uiEntry.frameSelector).first();
+    while (!isAttached && attempts < maxAttempts) {
+      attempts++;
+      // Scroll top window down by 400px to trigger scroll/intersection observers
+      await this.page.evaluate(() => window.scrollBy(0, 400));
+      await this.page.waitForTimeout(300);
 
-  // Check if frame element exists in the DOM
-  let isAttached = (await frameElement.count()) > 0;
+      isAttached = (await frameElement.count()) > 0;
+    }
 
-  // Progressive scroll loop to trigger viewport lazy-loading
-  let attempts = 0;
-  const maxAttempts = 12; // Max ~4800px scroll depth
-
-  while (!isAttached && attempts < maxAttempts) {
-    attempts++;
-    // Scroll top window down by 400px to trigger scroll/intersection observers
-    await this.page.evaluate(() => window.scrollBy(0, 400));
-    await this.page.waitForTimeout(300);
-
-    isAttached = (await frameElement.count()) > 0;
+    // Once attached, bring the iframe container into the viewport center
+    if (isAttached) {
+      await frameElement.scrollIntoViewIfNeeded().catch(() => {});
+      await frameElement.waitFor({ state: 'visible', timeout: 10000 }).catch(() => {});
+    } else {
+      console.warn(`[IntentFlow] Warning: frameSelector "${this.uiEntry.frameSelector}" not attached after progressive scroll.`);
+    }
   }
-
-  // Once attached, bring the iframe container into the viewport center
-  if (isAttached) {
-    await frameElement.scrollIntoViewIfNeeded().catch(() => {});
-    await frameElement.waitFor({ state: 'visible', timeout: 10000 }).catch(() => {});
-  } else {
-    console.warn(`[IntentFlow] Warning: frameSelector "${this.uiEntry.frameSelector}" not attached after progressive scroll.`);
-  }
-}
-
-
-
 
   // Allows dynamic parameter updating prior to performing interactions
   public setParams(params?: StepParams): void {
@@ -81,7 +61,7 @@ protected async ensureFrameReady(): Promise<void> {
   }
 
   /**
-   * Resolves locator taking universal container coordinates (anchorText) 
+   * Resolves locator taking universal container coordinates (anchorText)
    * and scoped childWidget elements into account.
    */
   protected resolveTargetLocator(params?: StepParams): Locator {
@@ -172,7 +152,7 @@ protected async ensureFrameReady(): Promise<void> {
 
   /**
    * Standardized Verification Mechanism.
-   * Handles equals, contains, and state assertions across scalar & array values.
+   * Handles equals, notEquals, contains, notContains, and state assertions across scalar & array values.
    */
   public async verify(subIntent: SubIntent = 'equals', expectedValue?: Scalar | Scalar[], params?: StepParams): Promise<void> {
     if (params) this.setParams(params);
@@ -207,6 +187,22 @@ protected async ensureFrameReady(): Promise<void> {
         if (value === undefined) throw new Error(`[IntentFlow] Verification 'contains' requires an expected value.`);
         const valStr = String(value);
         await expect(this.locator).toContainText(valStr);
+        break;
+      }
+
+      case 'notContains': {
+        if (value === undefined) throw new Error(`[IntentFlow] Verification 'notContains' requires an expected value.`);
+        const valStr = String(value);
+        await expect(this.locator).toBeVisible({ timeout: params?.timeout || 15000 });
+        await expect(this.locator).not.toContainText(valStr, { timeout: params?.timeout || 15000 });
+        break;
+      }
+
+      case 'notEquals': {
+        if (value === undefined) throw new Error(`[IntentFlow] Verification 'notEquals' requires an expected value.`);
+        const valStr = String(value);
+        await expect(this.locator).toBeVisible({ timeout: params?.timeout || 15000 });
+        await expect(this.locator).not.toHaveText(valStr, { timeout: params?.timeout || 15000 });
         break;
       }
 

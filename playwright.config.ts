@@ -26,7 +26,7 @@ export default defineConfig({
   },
 
   use: {
-    baseURL: runtime.baseURL,
+    baseURL: runtime.baseURL || 'https://mhufrostlor-qa.learningmate.com',
     headless: false,                                   //'https://mhufrostlor-qa.learningmate.com' ,                              // 'https://sandbox.moodledemo.net',
     trace: 'on',         //'retain-on-failure',
 
