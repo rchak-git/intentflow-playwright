@@ -32,7 +32,7 @@ The report may contain `MISSING_UI_MAPS`, `MISSING_UI_MAP_ENTRIES`,
 From the repository root in PowerShell:
 
 ```powershell
-npx tsx src\cli\preflight.ts --suite tests\suites\pilot_moodle\pilotMoodleParticipantsSteps.yaml --profile td_pilotAdminVerifyCourseParticipants
+npx tsx src\cli\preflight.ts --suite tests\suites\Moodle\studentParticipantsSteps.yaml --profile td_studentVerifyCourseParticipants
 ```
 
 An empty `issues` array means these static checks found no issue. Omit

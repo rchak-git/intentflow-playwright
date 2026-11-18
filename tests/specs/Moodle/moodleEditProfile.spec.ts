@@ -11,7 +11,7 @@ test('Student enters and clears the profile description without saving', async (
     }
   });
   const { username, password } = resolveLoginData('student');
-  const suite = loadYamlSuite('tests/suites/pilot_moodle/moodleEditProfileSteps.yaml');
+  const suite = loadYamlSuite('tests/suites/Moodle/moodleEditProfileSteps.yaml');
   const precondition = suite.profiles?.td_studentEnterAndClearDescription?.preconditions?.[0];
   if (!precondition || precondition.refProfile !== 'td_studentLogin') {
     throw new Error('The student login precondition is missing.');

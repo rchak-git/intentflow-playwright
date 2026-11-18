@@ -26,6 +26,8 @@ The source types and registry are authoritative. In particular:
 
 - Prefer one reusable map per application page or component, rather than separate maps for student, admin, or other roles. Search all relevant registered maps and existing AUT directories first; reuse verified entries regardless of their filename.
 - Choose a stable, page-oriented name using the page heading, title, route, or established product terminology. Do not rely on a heading or title alone when it is generic, dynamic, localized, or shared by different pages; add a distinguishing page or component qualifier. For example, use `moodlePrivateFiles.map.ts` rather than `studentPrivateFiles.map.ts`.
+- Place genuinely application-wide controls in a map for the shared application component, such as a persistent navigation bar or user menu; page-specific controls belong in their page or component map. Reuse an existing verified entry even if its current file name is not ideal.
+- If ownership is unclear, ask the test developer which map should own the entry. Do not use a miscellaneous catch-all as a default; use a specifically named shared-component map when appropriate.
 - Share entries across roles only when the target and locator are verified for those roles. Add role-qualified entries or separate maps only when materially different interfaces or locator scoping require them; do not assume one role's locator works for another.
 - Apply this convention to new artifacts and non-destructive additions. Do not rename or merge existing maps, exports, keys, or registry aliases without an explicit request; a migration must update dependent references and be verified.
 - Place UI Map files under `src/registries/<AUT_Directory>/<camelCasePageName>.map.ts`, preserving the directory's exact casing (for example, `Moodle`, `Mhe`, `Angular`, or `React`).
@@ -36,6 +38,17 @@ The source types and registry are authoritative. In particular:
   1. Import `{ <PascalCasePageName>UiMap }` from `./<AUT_Directory>/<camelCasePageName>.map`.
   2. Spread `...<PascalCasePageName>UiMap` into the corresponding consolidated domain map (for example, `MOODLE_UI_MAP` or `MHE_UI_MAP`).
   3. Add both `<PascalCasePageName>UiMap` and `<camelCasePageName>UiMap: <PascalCasePageName>UiMap as Record<string, UiMapEntry>` to `UI_MAP_REGISTRY`.
+- Domain maps are spread into the global map, and selected suite maps overlay it. Check for duplicate keys across consolidated maps: a later spread or overlay can silently replace an earlier entry.
+
+## Control Capability and SDET Handoff
+
+- Check the runtime control implementation as well as the schema before deciding that a scenario needs a new capability. A missing map entry alone is not a missing control type: when UI Map work is requested, map a verified target using an existing supported control instead of handing it off.
+- If an existing control cannot perform the required operation, report the scenario, operation, and evidence. Propose a new control type only if an existing type cannot appropriately support the behavior.
+- Reuse an existing sub-intent keyword when its meaning fits. Do not repurpose a keyword for a different meaning or silently weaken an action or assertion. Require SDET approval before adding a new control type or sub-intent keyword.
+- For behavior not expressible with existing YAML operations, recommend options to the SDET: scenario-specific spec code, a reusable helper, a suitable control operation or keyword, or a custom handler. Compare likely reuse, readability, implementation and maintenance cost, and safety; one-off orchestration may stay in the spec, while genuinely reusable behavior may justify a shared capability. Reuse an existing keyword when its meaning fits rather than adding one merely for reuse.
+- Use a custom handler in YAML only when its registration, dispatch, parameters, preflight support, and runtime behavior are verified. Do not treat a placeholder as an implementation; report missing handler support and propose it to the SDET. A safe, verified spec-level implementation may remain executable without pretending an unsupported YAML operation exists.
+- An existing control may be extended under a suitable existing keyword without separate approval. Before changing it, run a focused test of current behavior; after the change, rerun that test and run a focused test for the new behavior. Report a failing or unavailable baseline explicitly; do not claim backward compatibility without evidence.
+- Report missing credentials, inaccessible pages, ambiguous locators, missing prerequisites, and unsafe cleanup as execution blockers, not as evidence that a new control type is needed.
 
 ## Reaching Authenticated or Deep Target Pages
 

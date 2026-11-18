@@ -5,7 +5,7 @@
 Before running a profile, check its suite and references without launching a browser:
 
 ```powershell
-npx tsx src\cli\preflight.ts --suite tests\suites\pilot_moodle\pilotMoodleParticipantsSteps.yaml --profile td_pilotAdminVerifyCourseParticipants
+npx tsx src\cli\preflight.ts --suite tests\suites\Moodle\studentParticipantsSteps.yaml --profile td_studentVerifyCourseParticipants
 ```
 
 Omit `--profile` to check all profiles in the merged suite. The JSON report lists missing UI maps, field and composite keys, profiles, scenarios, unsupported operations, and dynamic keys that cannot be verified. Findings or suite-loading errors produce a nonzero exit code.

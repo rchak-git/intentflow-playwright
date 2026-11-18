@@ -1,0 +1,162 @@
+description: "Teacher setup and student online-text submission workflow"
+# The matching spec supplies separate role credentials and browser contexts.
+# The student profile starts on the course page with the teacher's assignment name.
+# The workflow changes Moodle data and the matching spec cleans up its temporary assignment.
+uiMap:
+  - "MoodleLoginPageUiMap"
+  - "MoodleHomePageUiMap"
+  - "StudentMyCoursesUiMap"
+  - "MoodleCourseUiMap"
+  - "MoodleAssignmentSettingsUiMap"
+  - "MoodleAssignmentSubmissionUiMap"
+includes:
+  - "studentMyCoursesSteps.yaml"
+
+profiles:
+  td_teacherCreateAssignment:
+    description: "Create a uniquely named assignment open for online-text submissions"
+    preconditions:
+      - refProfile: "td_studentNavigateToMyCourses"
+    steps:
+      - step: "Open My first course"
+        fieldKey: "moodle_studentMyCourses_firstCourseLink"
+        intent: "action"
+        params:
+          subIntent: "click"
+      - step: "Ensure the assignment name is not already in use"
+        fieldKey: "moodle_course_studentAssignmentLink"
+        intent: "verify"
+        params:
+          subIntent: "state"
+          anchorText: "${data:assignmentName}"
+          value: "hidden"
+      - step: "Remember the current course editing mode"
+        fieldKey: "moodle_course_editModeCheckbox"
+        intent: "extract"
+        params:
+          storeAs: "assignmentOriginalEditMode"
+      - step: "Enable course editing"
+        fieldKey: "moodle_course_editModeCheckbox"
+        intent: "populate"
+        params:
+          value: true
+      - step: "Open the General section content menu"
+        fieldKey: "moodle_course_generalInsertContentButton"
+        intent: "action"
+        params:
+          subIntent: "click"
+      - step: "Open the activity chooser"
+        fieldKey: "moodle_course_activityOrResourceButton"
+        intent: "action"
+        params:
+          subIntent: "click"
+      - step: "Open the assignment settings"
+        fieldKey: "moodle_course_assignmentChooserLink"
+        intent: "action"
+        params:
+          subIntent: "dblClick"
+      - step: "Name the assignment"
+        fieldKey: "moodle_assignmentSettings_nameTextbox"
+        intent: "populate"
+        params:
+          value: "${data:assignmentName}"
+      - step: "Allow submissions immediately"
+        fieldKey: "moodle_assignmentSettings_allowSubmissionsFromCheckbox"
+        intent: "populate"
+        params:
+          value: false
+      - step: "Disable the submission cutoff"
+        fieldKey: "moodle_assignmentSettings_cutoffDateCheckbox"
+        intent: "populate"
+        params:
+          value: false
+      - step: "Enable online text"
+        fieldKey: "moodle_assignmentSettings_onlineTextCheckbox"
+        intent: "populate"
+        params:
+          value: true
+      - step: "Disable file submissions"
+        fieldKey: "moodle_assignmentSettings_fileSubmissionsCheckbox"
+        intent: "populate"
+        params:
+          value: false
+      - step: "Open submission settings"
+        fieldKey: "moodle_assignmentSettings_submissionSettingsButton"
+        intent: "action"
+        params:
+          subIntent: "click"
+      - step: "Submit directly when the student saves"
+        fieldKey: "moodle_assignmentSettings_requireSubmitButtonSelect"
+        intent: "populate"
+        params:
+          value: "No"
+      - step: "Save the assignment"
+        fieldKey: "moodle_assignmentSettings_saveAndReturnButton"
+        intent: "action"
+        params:
+          subIntent: "click"
+
+  td_studentSubmitAssignment:
+    description: "Submit and remove online text in the assignment created by this workflow"
+    steps:
+      - step: "Open the assignment created by the teacher"
+        fieldKey: "moodle_course_studentAssignmentLink"
+        intent: "action"
+        params:
+          subIntent: "click"
+          anchorText: "${data:assignmentName}"
+      - step: "Verify there is no existing submission"
+        fieldKey: "moodle_assignmentSubmission_statusLabel"
+        intent: "verify"
+        params:
+          subIntent: "equals"
+          value: "No submissions have been made yet"
+      - step: "Open the submission form"
+        fieldKey: "moodle_assignmentSubmission_addButton"
+        intent: "action"
+        params:
+          subIntent: "click"
+      - step: "Enter the pilot submission"
+        fieldKey: "moodle_assignmentSubmission_onlineTextRichText"
+        intent: "populate"
+        params:
+          value: "IntentFlow pilot test submission"
+      - step: "Move focus out of the editor to synchronize its content"
+        fieldKey: "moodle_assignmentSubmission_onlineTextRichText"
+        intent: "action"
+        params:
+          subIntent: "pressKey"
+          value: "Tab"
+      - step: "Save the submission"
+        fieldKey: "moodle_assignmentSubmission_saveButton"
+        intent: "action"
+        params:
+          subIntent: "click"
+      - step: "Verify the submitted text"
+        fieldKey: "moodle_assignmentSubmission_savedTextLabel"
+        intent: "verify"
+        params:
+          subIntent: "equals"
+          value: "IntentFlow pilot test submission"
+      - step: "Verify the submission status"
+        fieldKey: "moodle_assignmentSubmission_statusLabel"
+        intent: "verify"
+        params:
+          subIntent: "equals"
+          value: "Submitted for grading"
+      - step: "Remove the test submission"
+        fieldKey: "moodle_assignmentSubmission_removeButton"
+        intent: "action"
+        params:
+          subIntent: "click"
+      - step: "Confirm submission removal"
+        fieldKey: "moodle_assignmentSubmission_confirmRemovalButton"
+        intent: "action"
+        params:
+          subIntent: "click"
+      - step: "Verify there is no submission"
+        fieldKey: "moodle_assignmentSubmission_statusLabel"
+        intent: "verify"
+        params:
+          subIntent: "equals"
+          value: "No submissions have been made yet"

@@ -88,6 +88,21 @@ as described in [section 8](#8-simple-yaml-test-runner).
 - **Status:** Workflow guidance; actual savings require measurement. Initial
   framework and agent setup may cost more than subsequent reuse.
 
+### Evaluate page access and UI Map discovery
+
+- **Priority:** Low. **Status:** Proposed for review after more pilot exercises;
+  no change to the current agent flow is planned yet.
+- **Page access:** Measure whether using existing navigation profiles with
+  [reachPage](../src/cli/reachPage.ts) reduces authoring time and tokens.
+  Check role-specific credentials, session expiry, and the shared saved-state
+  file when testing workflows with multiple roles.
+- **UI Map discovery:** Compare scenario-scoped mapping with inspecting a
+  broader page section once and mapping its verified controls upfront. Track
+  subsequent reuse, inspection time, and locator maintenance. Continue
+  scenario-scoped mapping by default unless broader mapping is requested.
+- **Decision:** Compare multiple representative exercises before proposing
+  changes; do not assume either approach is faster without measurements.
+
 ## 7. Additional LMS control capabilities
 
 The framework already has textboxes, buttons, checkboxes, radio groups, native
@@ -137,6 +152,23 @@ Prioritize the following additions one at a time:
   credentials. The example is a proposed API, not executable today.
 - **Scope:** First implement the shared runner and verify existing behavior.
   Automatic discovery of YAML profiles is a separate potential improvement.
+
+### Custom handler support
+
+- **Status:** Proposed; general control handlers are not implemented. The
+  existing page-level `switchTab` handler is a separate supported operation.
+- **Goal:** Let YAML invoke verified custom behavior when existing intents and
+  sub-intents cannot express it, without forcing every special case into a new
+  keyword or a verbose test method.
+- **SDET review:** Compare scenario-specific spec code, a reusable helper, a
+  control operation or keyword, and a custom handler based on reuse,
+  readability, maintenance, and safety. Retain the approval requirement for
+  new control types and sub-intent keywords.
+- **Framework work:** Design and test handler registration and dispatch,
+  parameter validation, preflight integration, and explicit failures for
+  unknown or unsupported handlers. Preserve test isolation, existing
+  assertions and cleanup safety; avoid exposing credentials or sensitive data.
+  Do not treat placeholder handlers as successful execution.
 
 ## 9. Representative LMS pilot exercises
 

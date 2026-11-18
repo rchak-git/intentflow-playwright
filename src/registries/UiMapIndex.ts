@@ -7,8 +7,10 @@ import { MoodleHomePageUiMap } from './Moodle/MoodleHomePage.map';
 import { MoodleCourseUiMap } from './Moodle/MoodleCourse.map';
 import { MoodleParticipantUiMap } from './Moodle/MoodleParticipants.map';
 import { MoodleEditProfileUiMap } from './Moodle/moodleEditProfile.map';
-import { StudentMyCoursesUiMap } from './pilot_moodle/studentMyCourses.map';
-import { StudentPrivateFilesUiMap } from './pilot_moodle/studentPrivateFiles.map';
+import { MoodleAssignmentSettingsUiMap } from './Moodle/moodleAssignmentSettings.map';
+import { MoodleAssignmentSubmissionUiMap } from './Moodle/moodleAssignmentSubmission.map';
+import { StudentMyCoursesUiMap } from './Moodle/studentMyCourses.map';
+import { StudentPrivateFilesUiMap } from './Moodle/studentPrivateFiles.map';
 
 import { AgGridTableUiMap } from './temp/AgGridUiMap';
 import { CustomSelectUiMap } from './temp/customSelect.map';
@@ -34,6 +36,8 @@ export const MOODLE_UI_MAP: Record<string, UiMapEntry> = {
   ...MoodleCourseUiMap,
   ...MoodleParticipantUiMap,
   ...MoodleEditProfileUiMap,
+  ...MoodleAssignmentSettingsUiMap,
+  ...MoodleAssignmentSubmissionUiMap,
   ...StudentMyCoursesUiMap,
   ...StudentPrivateFilesUiMap,
 };
@@ -79,6 +83,10 @@ export const UI_MAP_REGISTRY: Record<string, Record<string, UiMapEntry>> = {
   moodleParticipantsUiMap: MoodleParticipantUiMap as Record<string, UiMapEntry>,
   MoodleEditProfileUiMap,
   moodleEditProfileUiMap: MoodleEditProfileUiMap as Record<string, UiMapEntry>,
+  MoodleAssignmentSettingsUiMap,
+  moodleAssignmentSettingsUiMap: MoodleAssignmentSettingsUiMap as Record<string, UiMapEntry>,
+  MoodleAssignmentSubmissionUiMap,
+  moodleAssignmentSubmissionUiMap: MoodleAssignmentSubmissionUiMap as Record<string, UiMapEntry>,
   StudentMyCoursesUiMap,
   studentMyCoursesUiMap: StudentMyCoursesUiMap as Record<string, UiMapEntry>,
   StudentPrivateFilesUiMap,

@@ -10,7 +10,7 @@ import type { SuiteSpec } from '../types/intentSchema';
 import type { UiMapEntry } from '../types/uiMapTypes';
 
 test('checks a real included pilot profile without requiring runtime credentials', () => {
-  const suite = loadYamlSuite('tests/suites/pilot_moodle/studentParticipantsSteps.yaml');
+  const suite = loadYamlSuite('tests/suites/Moodle/studentParticipantsSteps.yaml');
   const report = preflightSuite(suite, 'td_studentVerifyCourseParticipants');
   assert.deepEqual(report.issues, []);
 });
@@ -264,7 +264,7 @@ test('validates rich-text operations and plain-text values', () => {
 test('CLI reports findings and exits nonzero for a missing profile', () => {
   const result = spawnSync(process.execPath, [
     '--import', 'tsx', 'src/cli/preflight.ts',
-    '--suite', 'tests/suites/pilot_moodle/studentParticipantsSteps.yaml',
+    '--suite', 'tests/suites/Moodle/studentParticipantsSteps.yaml',
     '--profile', 'doesNotExist',
   ], { encoding: 'utf8' });
   assert.equal(result.status, 1, result.stderr);

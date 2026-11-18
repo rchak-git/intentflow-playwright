@@ -5,7 +5,7 @@ import { loadYamlSuite } from '../../../src/engine/yamlLoader';
 
 test('Student logs in', async ({ page }) => {
   const { username, password } = resolveLoginData('student');
-  const suite = loadYamlSuite('tests/suites/pilot_moodle/studentLoginSteps.yaml');
+  const suite = loadYamlSuite('tests/suites/Moodle/studentLoginSteps.yaml');
   const profile = suite.profiles?.td_studentLogin;
   if (!profile) throw new Error('The student login profile is missing.');
   profile.data = { ...profile.data, username, password };

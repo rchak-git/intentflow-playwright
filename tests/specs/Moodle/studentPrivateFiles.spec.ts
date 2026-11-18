@@ -16,7 +16,7 @@ async function reopenPrivateFiles(page: Page): Promise<void> {
 
 test('Student uploads a private file and verifies it persists', async ({ page }) => {
   const { username, password } = resolveLoginData('student');
-  const suite = loadYamlSuite('tests/suites/pilot_moodle/studentPrivateFilesSteps.yaml');
+  const suite = loadYamlSuite('tests/suites/Moodle/studentPrivateFilesSteps.yaml');
   const precondition = suite.profiles?.td_studentUploadPrivateFile?.preconditions?.[0];
   if (!precondition || precondition.refProfile !== 'td_studentLogin') {
     throw new Error('The student login precondition is missing.');
